@@ -13,6 +13,7 @@ Client
 -->Should we timestamp the authentication msgs?
 ------------>yes!
 --> for client, should we have it so that once a client opens up the communication, their username/public key of the client is announced?
+------------>should we stick with pseudonyms (username)
 ------->then we can just encrypt using their username that would be linked to an rsa key? Is that even possible?  
 
 
