@@ -1,0 +1,33 @@
+Client 
+⦁	Get their username 
+⦁	Store their username
+⦁	Generate RSA keys for them
+⦁	Initial connection, send connection message with public key of client to relay and wait for relay to respond with it’s public key. 
+⦁	Once client gets relay’s public key: store it and move on to authentication
+⦁	For authentication msgs: 
+⦁	-> FIRST MSG: Send (msg with E_privateKey)E_relayPublicKey
+⦁	-> SECOND MSG: decrpy using private key, match to see the msg sent was correctly decrypted and then decrpt using public key of relay 
+⦁	-> THIRD MSG: re-ecrypt the challenge msg with public key of relay and send it back to relay 
+⦁	   
+
+-->Should we timestamp the authentication msgs?
+--> for client, should we have it so that once a client enters opens up the communication, their username is announced?
+------->then we can just encrypt using their username that would be linked to an rsa key? Is that even possible?  
+
+
+
+Server
+⦁	Generate RSA keys for relay 
+⦁	Set up connection on a Port #
+⦁	Listen to incoming connections
+⦁	Once a client tries to connect: send public key to client and store client’s public key 
+⦁	For authentication msgs: 
+⦁	-> FIRST MSG: decrypt with private key, decrypt with public key of client. 
+⦁	-> SECOND MSG: E_clientPublicKey( E_replayPrivateKey(RandomWord), decrypted msg)
+⦁	->THIRD MSG: decrypt and check the challenge mathces. 
+⦁	If matched, add client to a list of authenticated clients.  
+
+
+-->need to have an array of random words.
+------->we can do that .txt file with the most common passwords on it and just read from a random place
+---------------->or just generate a random number. That can work too 
