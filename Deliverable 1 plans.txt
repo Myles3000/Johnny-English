@@ -11,12 +11,13 @@ Client
 ⦁	   
 
 -->Should we timestamp the authentication msgs?
---> for client, should we have it so that once a client enters opens up the communication, their username is announced?
+------------>yes!
+--> for client, should we have it so that once a client opens up the communication, their username/public key of the client is announced?
 ------->then we can just encrypt using their username that would be linked to an rsa key? Is that even possible?  
 
 
 
-Server
+Server/relay
 ⦁	Generate RSA keys for relay 
 ⦁	Set up connection on a Port #
 ⦁	Listen to incoming connections
