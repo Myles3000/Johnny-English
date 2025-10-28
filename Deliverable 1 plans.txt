@@ -17,6 +17,10 @@ Client
 ------->then we can just encrypt using their username that would be linked to an rsa key? Is that even possible?  
 
 
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Can we use the public keys (RSA keys) as the keys and hash them? Is that allowed? Will that work?
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 
 Server/relay
 ⦁	Generate RSA keys for relay 
