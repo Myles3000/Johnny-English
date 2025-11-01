@@ -8,16 +8,16 @@ import java.util.*;
 public class TCPSampleServer 
 {
 	PublicKeys usersPub = new PublicKeys();
+	private static HashMap<String, Socket> currentClients = new HashMap<>();
 
 	public void go()
 	{
-		String message="Hello from server";
+		
 		try
 		{
 			//Create a server socket at port 7777
 			ServerSocket serverSock = new ServerSocket(7777);
 			RSAKeys craft = new RSAKeys();
-			KeyPair keys = craft.KeyPairGenerator();
 			//Server goes into a permanent loop accepting connections from clients			
 			while(true)
 			{
@@ -25,7 +25,7 @@ public class TCPSampleServer
 				//The method blocks until a connection is made
 				Socket sock = serverSock.accept();
 				//PrintWriter is a bridge between character data and the socket's low-level output stream
-				new Thread(new ClientHandler(sock, keys)).start();
+				new Thread(new ClientHandler(sock)).start();
 			}
 
 		}
@@ -44,25 +44,57 @@ public class TCPSampleServer
 	private static class ClientHandler implements Runnable{
 		private Socket sock;
 		private String challenge = "RickRolled";
+		private ReceivePublicKey pubKey = new ReceivePublicKey();
 		Decrypt decode = new Decrypt();
 		Encrypt encode = new Encrypt();
-		KeyPair keys;
 
 
-		ClientHandler(Socket sock, KeyPair keys) {
+		ClientHandler(Socket sock) {
 			this.sock = sock;
-			this.key = key;
 		}
 
 		@Override
 		public void run(){
-			try(BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
-			PrintWriter out = new PrintWriter(sock.getOutputStream(), true)) {
-				String firstCode = in.readLine();
-				
+			try {
+				BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
+				PrintWriter out = new PrintWriter(sock.getOutputStream(), true)
+				PublicKey clientKey = pubKey.receivePublicKey(in);
+
+				iD = in.readLine();
+				if(currentClients.containsKey(iD)){
+
+				} else {
+					
+				}
+
+				currentClients.put(iD, sock);
+
+				String connect;
+				while((connect = in.readLine()) != null) {
+
+					String delimit = "|";
+
+					String[] line = connect.split(delimit);
+					String sender = line[0];
+					String target = line[1];
+					String sqn = line[2];
+					String msg = line[3];
+
+					Socket receiver = currentClients.get(target);
+
+					PrintWriter send = new PrintWriter(receiver.getOutputStream(), true);
+					send.println(msg);
+
+				}
+			
 
 			} catch (Exception e) {
 				e.printStackTrace();
+			} finally {
+				if (iD != null){
+					currentClients.remove(iD);
+				}
+				sock.close();
 			}
 		}
 	}
