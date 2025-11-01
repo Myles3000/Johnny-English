@@ -1,7 +1,3 @@
-//algorithms for decrpting using publickeys (for the msgs encrypted with private keys) and privatekeys (for the msgs encrypted with public keys)
-
-//this does MessageDigest using rsa keys for sha 256 hashing 
-
 //not secure but does not use cipher. How do we fix it to be more secure (mainly the decryptedFromPublicKey function)
 
 import java.math.BigInteger;
@@ -49,6 +45,3 @@ public class Decrypt {
         return Arrays.equals(expectedHash, decryptedHash);
     }
 }
-
-
-
