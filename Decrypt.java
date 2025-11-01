@@ -1,3 +1,7 @@
+//algorithms for decrpting using publickeys (for the msgs encrypted with private keys) and privatekeys (for the msgs encrypted with public keys)
+
+//this does MessageDigest using rsa keys for sha 256 hashing 
+
 import java.security.*;
 import java.util.*;
 import javax.crypto.Cipher;
@@ -35,3 +39,4 @@ public class Decrypt {
         return Arrays.equals(expectedHash, decryptedHash);
     }
 }
+
