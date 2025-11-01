@@ -2,9 +2,12 @@
 
 //this does MessageDigest using rsa keys for sha 256 hashing 
 
+//not secure but does not use cipher. How do we fix it to be more secure (mainly the decryptedFromPublicKey function)
+
+import java.math.BigInteger;
 import java.security.*;
+import java.security.interfaces.RSAPrivateKey;
 import java.util.*;
-import javax.crypto.Cipher;
 public class Decrypt {
 
     public static boolean decryptedFromPrivateKey(byte[] data, byte[] signature, PublicKey publicKey) throws Exception
@@ -22,21 +25,30 @@ public class Decrypt {
         return s.verify(signature);
     }
 
-    public static boolean decryptedFromPublicKey(byte[] data, byte[] signature, PrivateKey privateKey) throws Exception 
+    public static boolean decryptedFromPublicKey(byte[] data, String signature, PrivateKey privateKey) throws Exception 
     {
+        //modular math prep
+        RSAPrivateKey rsaKey = (RSAPrivateKey) privateKey;
+        BigInteger d = rsaKey.getPrivateExponent();
+        BigInteger n = rsaKey.getModulus();
+
         //calculating the size of the hash of the data 
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         byte[] expectedHash = digest.digest(data);
 
-        //using cipher to decrypt using private key
-        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-        cipher.init(Cipher.DECRYPT_MODE, privateKey);
+        //changing string into int 
+        byte[] signatureBytes = Base64.getDecoder().decode(signature);
+        BigInteger signatureInt = new BigInteger(signatureBytes);
+
 
         //decrpt and attain hashed value 
-        byte[] decryptedHash = cipher.doFinal(signature);
+        BigInteger decryptedInt = signatureInt.modPow(d, n);
 
         //compare and return comparison 
+        byte[] decryptedHash = decryptedInt.toByteArray();
         return Arrays.equals(expectedHash, decryptedHash);
     }
 }
+
+
 
