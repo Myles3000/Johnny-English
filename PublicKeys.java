@@ -1,6 +1,3 @@
-//this class stores all public keys so that all clients and servers cann use this class to get public keys of anyone
-//THIS IS USED BY THE SERVER/RELAY AFTER A CLIENT HAS SUCCESSFULLY AUTHENTICATED WITH THE RELAY
-
 import java.security.*;
 import java.util.TreeMap;
 
@@ -25,7 +22,10 @@ public class PublicKeys {
     {
         return publicKeys.get(u);
     }
+
+    public boolean containsKey(String un)
+    {
+        return publicKeys.containsKey(un);
+    }
     
 }
-
-

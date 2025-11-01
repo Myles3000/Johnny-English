@@ -1,7 +1,3 @@
-//algorithms for encrypting using publickeys and privatekeys
-
-//this does MessageDigest using rsa keys for sha 256 hashing 
-
 //not secure but does not use cipher. How do we fix it to be more secure (mainly the enctryptWithPublicKey function)
 
 import java.math.BigInteger;
@@ -11,8 +7,11 @@ import java.util.Base64;
 
 public class Encrypt{
 
-    public static byte[] enctryptWithPrivateKey(byte[] data, PrivateKey privateKey) throws Exception
+    public static byte[] enctryptWithPrivateKey(String msg, PrivateKey privateKey) throws Exception
     {
+        //convert string to byte array
+        byte data[] = msg.getBytes();
+
         //Create a Signature object with SHA256withRSA algorithm
         Signature signature = Signature.getInstance("SHA256withRSA");
         
@@ -26,8 +25,10 @@ public class Encrypt{
         return signature.sign();
     }
 
-    public static String enctryptWithPublicKey(byte[] data, PublicKey publicKey) throws Exception
+    public static String enctryptWithPublicKey(String msg, PublicKey publicKey) throws Exception
     {
+        //convert string to byte array
+        byte data[] = msg.getBytes();
 
         //modular math prep 
         RSAPublicKey rsaKey = (RSAPublicKey) publicKey;
