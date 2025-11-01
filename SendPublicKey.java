@@ -16,7 +16,7 @@ public class SendPublicKey {
             String base64Key = Base64.getEncoder().encodeToString(keyBytes);
 
             //send the string to relay or client 
-            writer.println(publicKey);
+            writer.println(base64Key);
             writer.flush();
 
     }

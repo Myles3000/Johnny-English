@@ -15,12 +15,16 @@ public class ReceivePublicKey {
         //convert string into bytes 
         byte[] keyBytes = Base64.getDecoder().decode(base64Key);
 
+        if (base64Key == null) 
+        {
+            throw new IllegalStateException("Null Public Key Received");
+        }
         //reconstruct the public key from the bytes 
-        KeyFactory keyFactory = KeyFactory.getInstance("RSA"); 
         X509EncodedKeySpec keySpec = new X509EncodedKeySpec(keyBytes);
+        KeyFactory key = KeyFactory.getInstance("RSA"); 
         
         //return the key
-        return keyFactory.generatePublic(keySpec);
+        return key.generatePublic(keySpec);
 
     }
 }
