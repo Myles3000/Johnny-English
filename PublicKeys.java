@@ -1,3 +1,5 @@
+//this class stores all public keys so that all clients and servers cann use this class to get public keys of anyone
+
 import java.security.*;
 import java.util.TreeMap;
 
@@ -24,3 +26,4 @@ public class PublicKeys {
     }
     
 }
+
