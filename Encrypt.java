@@ -2,8 +2,12 @@
 
 //this does MessageDigest using rsa keys for sha 256 hashing 
 
+//not secure but does not use cipher. How do we fix it to be more secure (mainly the enctryptWithPublicKey function)
+
+import java.math.BigInteger;
 import java.security.*;
-import javax.crypto.Cipher;
+import java.security.interfaces.RSAPublicKey;
+import java.util.Base64;
 
 public class Encrypt{
 
@@ -22,21 +26,26 @@ public class Encrypt{
         return signature.sign();
     }
 
-    public static byte[] enctryptWithPublicKey(byte[] data, PublicKey publicKey) throws Exception
+    public static String enctryptWithPublicKey(byte[] data, PublicKey publicKey) throws Exception
     {
+
+        //modular math prep 
+        RSAPublicKey rsaKey = (RSAPublicKey) publicKey;
+        BigInteger e = rsaKey.getPublicExponent();
+        BigInteger n = rsaKey.getModulus();
+
         //calculating the size of the hash of the data 
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         byte[] hash = digest.digest(data);
 
-        //use cipher to encrypt with public key 
-        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding"); 
-        cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+        //conveting hashes to ints
+        BigInteger messageInt = new BigInteger(1, hash);
+        
 
         //sign and return 
-        byte[] nonStandardSignature = cipher.doFinal(hash);
-        return nonStandardSignature;
+        BigInteger signatureInt = messageInt.modPow(e, n);
+        return Base64.getEncoder().encodeToString(signatureInt.toByteArray());
     
     }
 }
-
 
