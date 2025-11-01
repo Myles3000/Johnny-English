@@ -1,3 +1,7 @@
+//algorithms for encrypting using publickeys and privatekeys
+
+//this does MessageDigest using rsa keys for sha 256 hashing 
+
 import java.security.*;
 import javax.crypto.Cipher;
 
@@ -34,4 +38,5 @@ public class Encrypt{
     
     }
 }
+
 
