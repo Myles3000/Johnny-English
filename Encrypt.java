@@ -1,6 +1,7 @@
 //not secure but does not use cipher. How do we fix it to be more secure (mainly the enctryptWithPublicKey function)
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
@@ -88,6 +89,16 @@ public class Encrypt{
         // Encrypt block: c = EM^e mod n
         return fix(new BigInteger(1, encyBlock).modPow(p.getPublicExponent(), p.getModulus()).toByteArray(), K);
 
+    }
+
+    public static byte[] stringToByte(String s) 
+    { 
+        return s.getBytes(StandardCharsets.UTF_8); 
+    }
+
+    public static String byteToString(byte[] b) 
+    { 
+        return new String(b, StandardCharsets.UTF_8); 
     }
 }
 
