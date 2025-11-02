@@ -6,7 +6,7 @@ import java.security.*;
 import java.util.*;
 
 public class TCPSampleServer {
-	PublicKeys usersPub = new PublicKeys();
+	static PublicKeys usersPub = new PublicKeys();
 	private HashMap<String, Socket> currentClients = new HashMap<>();
 	private Hashmap<String, PublicKey> authClients = new HashMap<>();
 
