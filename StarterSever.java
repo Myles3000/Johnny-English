@@ -8,7 +8,7 @@ import java.util.*;
 public class TCPSampleServer {
 	static PublicKeys usersPub = new PublicKeys();
 	private HashMap<String, Socket> currentClients = new HashMap<>();
-	private Hashmap<String, PublicKey> authClients = new HashMap<>();
+	private HashMap<String, PublicKey> authClients = new HashMap<>();
 
 	public void go(KeyPair keys) {
 		
@@ -38,7 +38,7 @@ public class TCPSampleServer {
 		SampleServerObj.go(keys);
 	}
 
-	private static class ClientHandler implements Runnable{
+	private class ClientHandler implements Runnable{
 		private Socket sock;
 		private KeyPair keys;
 		private String challenge = "RickRolled";
@@ -62,19 +62,19 @@ public class TCPSampleServer {
 
 				if(!authClients.containsValue(clientKey)){
 					// FIRST MSG: Decrypted with private key of relay, decrypted with public key of client
-					String firstMsg = in.readLine();
-					String partialDecode = decode.decryptedFromPublicKey(firstMsg, keys.getPublic());
-					String fullyDecode = decode.decryptedFromPrivateKey(partialDecode, clientKey);
+					byte[] firstMsg = in.readLine().getBytes(StandardCharsets.UTF_8);
+					byte[] partialDecode = decode.decryptedFromPublicKey(firstMsg, keys.getPublic());
+					byte[] fullyDecode = decode.decryptedFromPrivateKey(partialDecode, clientKey);
 
 					// SECOND MSG: Encrypted with relay private key the encrypted with clients public key
-					String partialEncode = encode.enctryptWithPrivateKey(challenge, keys.getPrivate()) + delimit + fullyDecode;
-					String secondMsg = encode.enctryptWithPublicKey(partialEncode, clientKey);
+					byte[] partialEncode = encode.enctryptWithPrivateKey(challenge.getBytes(StandardCharsets.UTF_8), keys.getPrivate()) + delimit + fullyDecode;
+					byte[] secondMsg = encode.enctryptWithPublicKey(partialEncode, clientKey);
 
 					out.println(secondMsg);
 
 					// Third MSG
-					String thirdMsg = in.readLine();
-					String clientResponse = decode.decryptedFromPublicKey(thirdMsg, keys.getPrivate());
+					byte[] thirdMsg = in.readLine().getBytes(StandardCharsets.UTF_8);
+					String clientResponse = new String(decode.decryptedFromPublicKey(thirdMsg, keys.getPrivate()), StandardCharsets.UTF_8);
 					String[] response = clientResponse.split(delimit);
 
 					if(response[0].equals(challenge)){
@@ -88,19 +88,20 @@ public class TCPSampleServer {
 						return;
 					}
 				}
+				name = response[1];
 
-				currentClients.put(iD, sock);
+				currentClients.put(name, sock);
 
 				String connect;
 				while((connect = in.readLine()) != null) {
 
-					String code = decode.decryptedFromPublicKey(connect, keys.getPrivate());
+					String code = new String(decode.decryptedFromPublicKey(connect.getBytes(StandardCharsets.UTF_8), keys.getPrivate()), StandardCharsets.UTF_8);
 
-					String[] line = code;
+					String[] line = code.split(delimit);
 					String sender = line[0];
 					String target = line[1];
 					String sqn = line[2];
-					String msg = line[3];
+					byte[] msg = line[3].getBytes(StandardCharsets.UTF_8);
 
 					Socket receiver = currentClients.get(target);
 					if(receiver != null && !receiver.isClosed()){
@@ -114,7 +115,7 @@ public class TCPSampleServer {
 			} catch (Exception e) {
 				e.printStackTrace();
 			} finally {
-				if (iD != null){
+				if (name != null){
 					currentClients.remove(iD);
 				}
 				sock.close();
