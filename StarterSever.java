@@ -9,8 +9,9 @@ public class TCPSampleServer
 {
 	PublicKeys usersPub = new PublicKeys();
 	private static HashMap<String, Socket> currentClients = new HashMap<>();
+	private Hashmap<String, PublicKey> authClients = new HashMap<>();
 
-	public void go()
+	public void go(KeyPair keys)
 	{
 		
 		try
@@ -25,7 +26,7 @@ public class TCPSampleServer
 				//The method blocks until a connection is made
 				Socket sock = serverSock.accept();
 				//PrintWriter is a bridge between character data and the socket's low-level output stream
-				new Thread(new ClientHandler(sock)).start();
+				new Thread(new ClientHandler(sock, keys)).start();
 			}
 
 		}
@@ -36,35 +37,58 @@ public class TCPSampleServer
 	}
 	public static void main(String args[])
 	{
-		
+		RSAKeys locksmith = new RSAKeys();
+		KeyPair keys = locksmith.rsaKeysGenerator();
 		TCPSampleServer SampleServerObj = new TCPSampleServer();
-		SampleServerObj.go();
+		SampleServerObj.go(keys);
+
 	}
 
 	private static class ClientHandler implements Runnable{
 		private Socket sock;
+		private KeyPair keys;
 		private String challenge = "RickRolled";
 		private ReceivePublicKey pubKey = new ReceivePublicKey();
-		Decrypt decode = new Decrypt();
-		Encrypt encode = new Encrypt();
+		
 
 
-		ClientHandler(Socket sock) {
+		ClientHandler(Socket sock, KeyPair keys) {
 			this.sock = sock;
+			this.keys = keys;
 		}
 
 		@Override
 		public void run(){
+			Decrypt decode = new Decrypt();
+			Encrypt encode = new Encrypt();
+			String delimit = "|";
 			try {
 				BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
 				PrintWriter out = new PrintWriter(sock.getOutputStream(), true)
 				PublicKey clientKey = pubKey.receivePublicKey(in);
 
-				iD = in.readLine();
-				if(currentClients.containsKey(iD)){
+
+				if(!authClients.containsValue(clientKey)){
+					// FIRST MSG: Decrypted with private key of relay, decrypted with public key of client
+					String firstMsg = in.readLine();
+					String partialDecode = decode.decryptedFromPublicKey(firstMsg, keys.getPublic());
+					String fullyDecode = decode.decryptedFromPrivateKey(partialDecode, clientKey);
+
+					// SECOND MSG: Encrypted with relay private key the encrypted with clients public key
+					String partialEncode = encode.enctryptWithPrivateKey(challenge, keys.getPrivate()) + delimit + fullyDecode;
+					String secondMsg = encode.enctryptWithPublicKey(partialEncode, clientKey);
+
+					out.println(secondMsg);
+
+					// Third MSG
+					String thirdMsg = in.readLine();
+					String clientResponse = decode.decryptedFromPublicKey(thirdMsg, keys.getPrivate());
+					String response, clientID = clientResponse.split(delimit);
+
+
 
 				} else {
-					
+
 				}
 
 				currentClients.put(iD, sock);
@@ -72,7 +96,7 @@ public class TCPSampleServer
 				String connect;
 				while((connect = in.readLine()) != null) {
 
-					String delimit = "|";
+					
 
 					String[] line = connect.split(delimit);
 					String sender = line[0];
