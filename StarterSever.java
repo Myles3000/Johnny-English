@@ -56,7 +56,7 @@ public class TCPSampleServer {
 			String delimit = "|";
 			try {
 				BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
-				PrintWriter out = new PrintWriter(sock.getOutputStream(), true)
+				PrintWriter out = new PrintWriter(sock.getOutputStream(), true);
 				PublicKey clientKey = pubKey.receivePublicKey(in);
 
 
