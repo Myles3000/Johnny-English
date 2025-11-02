@@ -8,22 +8,22 @@ public class PublicKeys {
 
     String userName;
     PublicKey pk;
-    TreeMap<String, PublicKey> publicKeys = new TreeMap<>();
+    static TreeMap<String, PublicKey> publicKeys = new TreeMap<>();
 
     public PublicKeys(){};
 
-    public void addPublicKey(String u, PublicKey p)
+    public static void addPublicKey(String u, PublicKey p)
     {
         publicKeys.put(u,p);
     }
 
     //for when clients want to msgs to each other (can refrence their names instead of just their public keys )
-    public PublicKey getPublicKey(String u)
+    public static PublicKey getPublicKey(String u)
     {
         return publicKeys.get(u);
     }
 
-    public boolean containsKey(String un)
+    public static boolean containsKey(String un)
     {
         return publicKeys.containsKey(un);
     }
