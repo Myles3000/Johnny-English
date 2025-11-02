@@ -5,17 +5,14 @@ import java.net.*;
 import java.security.*;
 import java.util.*;
 
-public class TCPSampleServer 
-{
+public class TCPSampleServer {
 	PublicKeys usersPub = new PublicKeys();
 	private static HashMap<String, Socket> currentClients = new HashMap<>();
 	private Hashmap<String, PublicKey> authClients = new HashMap<>();
 
-	public void go(KeyPair keys)
-	{
+	public void go(KeyPair keys) {
 		
-		try
-		{
+		try{
 			//Create a server socket at port 7777
 			ServerSocket serverSock = new ServerSocket(7777);
 			RSAKeys craft = new RSAKeys();
@@ -30,13 +27,11 @@ public class TCPSampleServer
 			}
 
 		}
-		catch(IOException ex)
-		{
+		catch(IOException ex) {
 			ex.printStackTrace();
 		}
 	}
-	public static void main(String args[])
-	{
+	public static void main(String args[]) {
 		RSAKeys locksmith = new RSAKeys();
 		KeyPair keys = locksmith.rsaKeysGenerator();
 		TCPSampleServer SampleServerObj = new TCPSampleServer();
@@ -94,8 +89,8 @@ public class TCPSampleServer
 						System.out.println("Authentication failed for " + sock.getInetAddress());
 						sock.close();
 						return;
-
 					}
+				}
 
 				currentClients.put(iD, sock);
 
