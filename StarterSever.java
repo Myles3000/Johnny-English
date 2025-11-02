@@ -15,7 +15,6 @@ public class TCPSampleServer {
 		try{
 			//Create a server socket at port 7777
 			ServerSocket serverSock = new ServerSocket(7777);
-			RSAKeys craft = new RSAKeys();
 			//Server goes into a permanent loop accepting connections from clients			
 			while(true)
 			{
@@ -31,12 +30,12 @@ public class TCPSampleServer {
 			ex.printStackTrace();
 		}
 	}
+
 	public static void main(String args[]) {
 		RSAKeys locksmith = new RSAKeys();
 		KeyPair keys = locksmith.rsaKeysGenerator();
 		TCPSampleServer SampleServerObj = new TCPSampleServer();
 		SampleServerObj.go(keys);
-
 	}
 
 	private static class ClientHandler implements Runnable{
@@ -44,8 +43,6 @@ public class TCPSampleServer {
 		private KeyPair keys;
 		private String challenge = "RickRolled";
 		private ReceivePublicKey pubKey = new ReceivePublicKey();
-		
-
 
 		ClientHandler(Socket sock, KeyPair keys) {
 			this.sock = sock;
