@@ -101,20 +101,23 @@ public class TCPSampleServer
 				String connect;
 				while((connect = in.readLine()) != null) {
 
-					String[] line = connect.split(delimit);
+					String code = decode.decryptedFromPublicKey(connect, keys.getPrivate());
+
+					String[] line = code;
 					String sender = line[0];
 					String target = line[1];
 					String sqn = line[2];
 					String msg = line[3];
 
 					Socket receiver = currentClients.get(target);
-
-					PrintWriter send = new PrintWriter(receiver.getOutputStream(), true);
-					send.println(msg);
-
-				}
-			
-
+					if(receiver != null && !receiver.isClosed()){
+						PrintWriter send = new PrintWriter(receiver.getOutputStream(), true);
+						msg = sender + "|" + msg;
+						send.println(encode.enctryptWithPrivateKey(msg, keys.getPrivate()));
+					} else {
+						out.println("Error: Target client " + target + " not found or disconnected");
+					}
+				}		
 			} catch (Exception e) {
 				e.printStackTrace();
 			} finally {
