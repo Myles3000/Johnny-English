@@ -83,20 +83,23 @@ public class TCPSampleServer
 					// Third MSG
 					String thirdMsg = in.readLine();
 					String clientResponse = decode.decryptedFromPublicKey(thirdMsg, keys.getPrivate());
-					String response, clientID = clientResponse.split(delimit);
+					String[] response = clientResponse.split(delimit);
 
+					if(response[0].equals(challenge)){
+						System.out.println("client authentication has been successful!");
+						out.println("Your have been succefully authenticated and your public key has been documented");
+						authClients.put(response[1], clientKey);
+					}else {
+						System.out.println("Authentication failed for " + sock.getInetAddress());
+						sock.close();
+						return;
 
-
-				} else {
-
-				}
+					}
 
 				currentClients.put(iD, sock);
 
 				String connect;
 				while((connect = in.readLine()) != null) {
-
-					
 
 					String[] line = connect.split(delimit);
 					String sender = line[0];
