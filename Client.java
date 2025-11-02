@@ -87,6 +87,7 @@ public class Client
                 String msg = scan.nextLine();
                 sendMsg(receiver, relaysPublicKey, msg, writer);
                 receivedMSG = reader.readLine();
+                receiveMsg(receivedMSG);
 
             }
 			
