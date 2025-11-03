@@ -128,16 +128,10 @@ public class TCPSampleServer {
 
 					Socket receiver = currentClients.get(sender);
 					System.out.println("The socket we will be sending to is: " + receiver);
-					System.out.println("Were are sending the message to the user: " + sender);
+					System.out.println("Were are sending the message to the user: " + sender)
 
 					if(receiver != null && !receiver.isClosed()){
-						do{
-							PrintWriter send = new PrintWriter(receiver.getOutputStream(), true);
-
-							connect = in.readLine();
-							line = connect.split(delimit);
-							msg = Base64.getDecoder().decode(line[0]);
-						} while(sender.equals(line[1]) && connect = in.readLine() != null);
+						PrintWriter send = new PrintWriter(receiver.getOutputStream(), true);
 						//msg = sender + "|" + msg;
 						send.println(msg);
 					} else {
