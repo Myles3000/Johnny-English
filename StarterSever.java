@@ -82,7 +82,7 @@ public class TCPSampleServer {
 					String temp = encode.byteToString(partialEncode);
 					//byte[] secondMsg = encode.enctryptWithPublicKey(encode.stringToByte(temp + delimit + fullyDecode), clientKey, rnd);
 
-					out.println(encode.byteToString(secondMsg));
+					out.println(temp);
 
 					// Third MSG
 					byte[] thirdMsg = Base64.getDecoder().decode(in.readLine());
