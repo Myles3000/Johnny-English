@@ -70,8 +70,9 @@ public class TCPSampleServer {
 					byte[] fullyDecode = decode.decryptedFromPrivateKey(partialDecode, clientKey);
 
 					// SECOND MSG: Encrypted with relay private key the encrypted with clients public key
-					String partialEncode = encode.enctryptWithPrivateKey(rubix, keys.getPrivate());
-					byte[] secondMsg = encode.enctryptWithPublicKey(encode.stringToByte(partialEncode + delimit + fullyDecode), clientKey, rnd);
+					byte[] partialEncode = encode.enctryptWithPrivateKey(rubix, keys.getPrivate());
+					String temp = encode.byteToString(partialEncode);
+					byte[] secondMsg = encode.enctryptWithPublicKey(encode.stringToByte(temp + delimit + fullyDecode), clientKey, rnd);
 
 					out.println(secondMsg);
 
