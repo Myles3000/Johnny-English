@@ -147,7 +147,7 @@ public class Client
             
             // //encrypt decrypted relay challege with username of client -> | delimeter  
             // String challenge = Encrypt.byteToString(fulldecryption);
-            String toSend = "challenge" + "|" + userName;
+            String toSend = "RickRolled" + "|" + userName;
             byte[] toEncrypt = Encrypt.stringToByte(toSend);
             
             //creating SecureRandom (used for PKCS 1 padding randomness)
@@ -253,6 +253,7 @@ public class Client
     }
     
 }
+
 
 
 
