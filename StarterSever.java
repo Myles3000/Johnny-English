@@ -116,6 +116,7 @@ public class TCPSampleServer {
 						out.println("Error: Target client " + target + " not found or disconnected");
 					}
 				}		
+				sock.close();
 			} catch (IOException e) {
 				System.err.println("There was an IOexception " + e.getMessage());
 			} catch (NoSuchAlgorithmException e){
@@ -126,7 +127,6 @@ public class TCPSampleServer {
 				if (sender != null){
 					currentClients.remove(sender);
 				}
-				sock.close();
 			}
 		}
 	}
