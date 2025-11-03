@@ -131,7 +131,13 @@ public class TCPSampleServer {
 					System.out.println("Were are sending the message to the user: " + sender);
 
 					if(receiver != null && !receiver.isClosed()){
-						PrintWriter send = new PrintWriter(receiver.getOutputStream(), true);
+						do{
+							PrintWriter send = new PrintWriter(receiver.getOutputStream(), true);
+
+							connect = in.readLine()
+							line = connect.split(delimit);
+							msg = Base64.getDecoder().decode(line[0]);
+						}while(sender.equals(line[1]))
 						//msg = sender + "|" + msg;
 						send.println(msg);
 					} else {
