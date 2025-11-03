@@ -91,7 +91,7 @@ public class TCPSampleServer {
 					byte[] clientResponse = decode.decryptedFromPublicKey(thirdMsg, keys.getPrivate());
 					String s = Encrypt.byteToString(clientResponse);
 					System.out.println(s);
-					String[] response = s.split(delimit);
+					String[] response = s.split("\\|");
 					
 					System.out.println("Response 0: " + response[0]);
 					System.out.println("Server wanted: " + challenge);
