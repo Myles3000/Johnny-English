@@ -54,6 +54,8 @@ public class TCPSampleServer {
 			Decrypt decode = new Decrypt();
 			Encrypt encode = new Encrypt();
 			String delimit = "|";
+			String sender = null;
+			SecureRandom rnd = SecureRandom.getInstanceStrong()
 			try {
 				BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
 				PrintWriter out = new PrintWriter(sock.getOutputStream(), true);
@@ -68,7 +70,7 @@ public class TCPSampleServer {
 
 					// SECOND MSG: Encrypted with relay private key the encrypted with clients public key
 					String partialEncode = encode.enctryptWithPrivateKey(encode.stringToByte(challenge), keys.getPrivate());
-					byte[] secondMsg = encode.enctryptWithPublicKey(encode.stringToByte(partialEncode + delimit + fullyDecode), clientKey);
+					byte[] secondMsg = encode.enctryptWithPublicKey(encode.stringToByte(partialEncode + delimit + fullyDecode), clientKey, rnd);
 
 					out.println(secondMsg);
 
@@ -98,7 +100,7 @@ public class TCPSampleServer {
 					String code = new String(decode.decryptedFromPublicKey(encode.stringToByte(connect), keys.getPrivate()));
 
 					String[] line = code.split(delimit);
-					String sender = line[0];
+					sender = line[0];
 					String target = line[1];
 					String sqn = line[2];
 					String msg = line[3];
