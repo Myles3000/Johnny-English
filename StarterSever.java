@@ -78,9 +78,9 @@ public class TCPSampleServer {
 					byte[] fullyDecode = decode.decryptedFromPrivateKey(partialDecode, clientKey);
 
 					// SECOND MSG: Encrypted with relay private key the encrypted with clients public key
-					byte[] partialEncode = encode.enctryptWithPrivateKey(rubix, keys.getPrivate());
+					byte[] partialEncode = encode.enctryptWithPublicKey(rubix, clientKey, rnd);
 					String temp = encode.byteToString(partialEncode);
-					byte[] secondMsg = encode.enctryptWithPublicKey(encode.stringToByte(temp + delimit + fullyDecode), clientKey, rnd);
+					//byte[] secondMsg = encode.enctryptWithPublicKey(encode.stringToByte(temp + delimit + fullyDecode), clientKey, rnd);
 
 					out.println(encode.byteToString(secondMsg));
 
@@ -107,19 +107,19 @@ public class TCPSampleServer {
 				String connect;
 				while((connect = in.readLine()) != null) {
 
-					String code = new String(decode.decryptedFromPublicKey(encode.stringToByte(connect), keys.getPrivate()));
+					//String code = new String(decode.decryptedFromPublicKey(encode.stringToByte(connect), keys.getPrivate()));
 
-					String[] line = code.split(delimit);
-					sender = line[0];
-					String target = line[1];
-					String sqn = line[2];
-					String msg = line[3];
+					String[] line = connect.split(delimit);
+					sender = line[1];
+					byte[] msg = Base64.getDecoder().decode(line[0]);
+					//String sqn = line[2];
+					//String msg = line[3];
 
-					Socket receiver = currentClients.get(target);
+					Socket receiver = currentClients.get(sender);
 					if(receiver != null && !receiver.isClosed()){
 						PrintWriter send = new PrintWriter(receiver.getOutputStream(), true);
-						msg = sender + "|" + msg;
-						send.println(encode.enctryptWithPrivateKey(encode.stringToByte(msg), keys.getPrivate()));
+						//msg = sender + "|" + msg;
+						send.println(msg);
 					} else {
 						out.println("Error: Target client " + target + " not found or disconnected");
 					}
