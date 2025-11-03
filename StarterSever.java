@@ -66,7 +66,14 @@ public class TCPSampleServer {
 
 				if(!authClients.containsValue(clientKey)){
 					// FIRST MSG: Decrypted with private key of relay, decrypted with public key of client
-					byte[] firstMsg = Base64.getDecoder().decode(in.readLine());
+					String line = in.readLine();
+					if (line == null) {
+					    System.err.println("Received Null from Client");
+					    return;
+					}
+					byte[] firstMsg = Base64.getDecoder().decode(line);
+
+					//byte[] firstMsg = Base64.getDecoder().decode(in.readLine());
 					byte[] partialDecode = decode.decryptedFromPublicKey(firstMsg, keys.getPrivate());
 					byte[] fullyDecode = decode.decryptedFromPrivateKey(partialDecode, clientKey);
 
