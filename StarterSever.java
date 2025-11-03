@@ -94,6 +94,7 @@ public class TCPSampleServer {
 					String[] response = s.split("\\|");
 					
 					System.out.println("Response 0: " + response[0]);
+					System.out.println("Response 1: " + response[1]);
 					System.out.println("Server wanted: " + challenge);
 
 					if(response[0].equals(challenge)){
@@ -101,6 +102,7 @@ public class TCPSampleServer {
 						out.println("Your have been succefully authenticated and your public key has been documented");
 						authClients.put(response[1], clientKey);
 						usersPub.addPublicKey(response[1], clientKey);
+						System.out.println(usersPub.containsKey(response[1]));
 					}else {
 						System.out.println("Authentication failed for " + sock.getInetAddress());
 						sock.close();
