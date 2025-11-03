@@ -84,10 +84,13 @@ public class TCPSampleServer {
 
 					out.println(temp);
 
+					String l = in.readLine();
+
 					// Third MSG
-					byte[] thirdMsg = Base64.getDecoder().decode(in.readLine());
-					String clientResponse = encode.byteToString(decode.decryptedFromPublicKey(thirdMsg, keys.getPrivate()));
-					String[] response = clientResponse.split(delimit);
+					byte[] thirdMsg = Base64.getDecoder().decode(l);
+					byte[] clientResponse = decode.decryptedFromPublicKey(thirdMsg, keys.getPrivate());
+					String s = Encrypt.byteToString(clientResponse);
+					String[] response = s.split(delimit);
 					
 					System.out.println("Response 0: " + response[0]);
 					System.out.println("Server wanted: " + challenge);
