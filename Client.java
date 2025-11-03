@@ -237,7 +237,7 @@ public class Client
 
     public static void receiveMsg(String msg) throws Exception
     {
-        byte[] m = Encrypt.stringToByte(separate);
+        byte[] m = Encrypt.stringToByte(msg);
         byte[] rcvMsg = Decrypt.decryptedFromPublicKey(m, privateKey);
 
         if(rcvMsg == null)
@@ -253,6 +253,7 @@ public class Client
     }
     
 }
+
 
 
 
