@@ -134,10 +134,10 @@ public class TCPSampleServer {
 						do{
 							PrintWriter send = new PrintWriter(receiver.getOutputStream(), true);
 
-							connect = in.readLine()
+							connect = in.readLine();
 							line = connect.split(delimit);
 							msg = Base64.getDecoder().decode(line[0]);
-						}while(sender.equals(line[1]))
+						}while(sender.equals(line[1]));
 						//msg = sender + "|" + msg;
 						send.println(msg);
 					} else {
