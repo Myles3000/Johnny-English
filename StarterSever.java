@@ -127,6 +127,8 @@ public class TCPSampleServer {
 					System.out.println("List of current Clients: " + currentClients);
 
 					Socket receiver = currentClients.get(sender);
+					System.out.println("The socket we will be sending to is: " + receiver);
+
 					if(receiver != null && !receiver.isClosed()){
 						PrintWriter send = new PrintWriter(receiver.getOutputStream(), true);
 						//msg = sender + "|" + msg;
