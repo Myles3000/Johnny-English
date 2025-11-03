@@ -101,7 +101,7 @@ public class TCPSampleServer {
 					String sender = line[0];
 					String target = line[1];
 					String sqn = line[2];
-					Strinng msg = line[3];
+					String msg = line[3];
 
 					Socket receiver = currentClients.get(target);
 					if(receiver != null && !receiver.isClosed()){
