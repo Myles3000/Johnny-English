@@ -90,6 +90,7 @@ public class TCPSampleServer {
 					byte[] thirdMsg = Base64.getDecoder().decode(l);
 					byte[] clientResponse = decode.decryptedFromPublicKey(thirdMsg, keys.getPrivate());
 					String s = Encrypt.byteToString(clientResponse);
+					System.out.println(s);
 					String[] response = s.split(delimit);
 					
 					System.out.println("Response 0: " + response[0]);
