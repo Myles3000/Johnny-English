@@ -12,7 +12,7 @@ public class Client
     static int sequenceNumber = 1;
     static PublicKey publicKey;
     static PrivateKey privateKey;
-
+	static PublicKeys pubKeys = new PublicKeys();
 
     public static void main(String[] args) throws Exception
     {
@@ -207,24 +207,24 @@ public class Client
 
     public static void sendMsg(String receiver, PublicKey relay, String msg, PrintWriter writer) throws Exception
     {
-        if(PublicKeys.containsKey(receiver) == false)
-        {
-            throw new IllegalArgumentException("Receiver with that username does not exist");
-        }
+        // if(pubKeys.containsKey(receiver) == false)
+        // {
+        //     throw new IllegalArgumentException("Receiver with that username does not exist");
+        // }
         String msgFormat = userName + "|" + receiver + "|" + sequenceNumber + "|" + msg;
         byte[] toSend = Encrypt.stringToByte(msgFormat);
 
-        //creating SecureRandom (used for PKCS 1 padding randomness)
-        SecureRandom rnd = SecureRandom.getInstanceStrong();
+        // //creating SecureRandom (used for PKCS 1 padding randomness)
+        // SecureRandom rnd = SecureRandom.getInstanceStrong();
 
-        //encrypt the message with public key of receiver
-        byte[] innerEncryption = Encrypt.enctryptWithPublicKey(toSend, PublicKeys.getPublicKey(receiver), rnd);
+        // //encrypt the message with public key of receiver
+        // byte[] innerEncryption = Encrypt.enctryptWithPublicKey(toSend, PublicKeys.getPublicKey(receiver), rnd);
 		
 		
 
-        //do an outer encryption of encrypted message with public key of the relay
-        rnd = SecureRandom.getInstanceStrong();
-        byte[] cipherTextBytes = Encrypt.enctryptWithPublicKey(innerEncryption, relay, rnd);
+        // //do an outer encryption of encrypted message with public key of the relay
+        // rnd = SecureRandom.getInstanceStrong();
+        // byte[] cipherTextBytes = Encrypt.enctryptWithPublicKey(innerEncryption, relay, rnd);
 
         //encode it for safer transport and send it relay
         String c= Base64.getEncoder().encodeToString(innerEncryption);
@@ -252,6 +252,7 @@ public class Client
     }
     
 }
+
 
 
 
