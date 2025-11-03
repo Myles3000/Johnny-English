@@ -131,22 +131,22 @@ public class Client
             byte[] rcvedMSG = Encrypt.stringToByte(receivedMSG);
             //byte[] decryptedMSG= Decrypt.decryptedFromPublicKey(rcvedMSG, k.getPrivate());
 
-            //get a treemap with exntrypeted data and string separated by the delimeter
-            TreeMap<byte[], String> delimiterSeparated = split(decryptedMSG);
-            //separate them out 
-            byte[] dec1 = delimiterSeparated.firstKey();
-            String msg = delimiterSeparated.get(dec1);
-            //check if received challage msg is correct 
-            if(msg.compareTo(mutualAuthenticationRandomMSG) != 0)
-            {
-                throw new IllegalArgumentException("Send challenge message and received messages do not Match");
-            }
+            // //get a treemap with exntrypeted data and string separated by the delimeter
+            // TreeMap<byte[], String> delimiterSeparated = split(decryptedMSG);
+            // //separate them out 
+            // byte[] dec1 = delimiterSeparated.firstKey();
+            // String msg = delimiterSeparated.get(dec1);
+            // //check if received challage msg is correct 
+            // if(msg.compareTo(mutualAuthenticationRandomMSG) != 0)
+            // {
+            //     throw new IllegalArgumentException("Send challenge message and received messages do not Match");
+            // }
 
-            //decrypt second part of received msg 
-            byte[] fulldecryption = Decrypt.decryptedFromPrivateKey(dec1, relay);
+            // //decrypt second part of received msg 
+            // byte[] fulldecryption = Decrypt.decryptedFromPrivateKey(dec1, relay);
             
-            //encrypt decrypted relay challege with username of client -> | delimeter  
-            String challenge = Encrypt.byteToString(fulldecryption);
+            // //encrypt decrypted relay challege with username of client -> | delimeter  
+            // String challenge = Encrypt.byteToString(fulldecryption);
             String toSend = "challenge" + "|" + userName;
             byte[] toEncrypt = Encrypt.stringToByte(toSend);
             
@@ -253,6 +253,7 @@ public class Client
     }
     
 }
+
 
 
 
