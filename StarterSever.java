@@ -61,6 +61,7 @@ public class TCPSampleServer {
 				BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
 				PrintWriter out = new PrintWriter(sock.getOutputStream(), true);
 				PublicKey clientKey = pubKey.receivePublicKey(in);
+				SendPublicKey.sendPublicKey(keys.getPublic(), out);
 
 
 				if(!authClients.containsValue(clientKey)){
