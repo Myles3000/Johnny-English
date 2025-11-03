@@ -129,7 +129,7 @@ public class Client
         {
             //decrypt the public key encryption using private key 
             byte[] rcvedMSG = Encrypt.stringToByte(receivedMSG);
-            byte[] decryptedMSG= Decrypt.decryptedFromPublicKey(rcvedMSG, k.getPrivate());
+            //byte[] decryptedMSG= Decrypt.decryptedFromPublicKey(rcvedMSG, k.getPrivate());
 
             //get a treemap with exntrypeted data and string separated by the delimeter
             TreeMap<byte[], String> delimiterSeparated = split(decryptedMSG);
@@ -147,14 +147,14 @@ public class Client
             
             //encrypt decrypted relay challege with username of client -> | delimeter  
             String challenge = Encrypt.byteToString(fulldecryption);
-            String toSend = challenge + "|" + userName;
+            String toSend = "challenge" + "|" + userName;
             byte[] toEncrypt = Encrypt.stringToByte(toSend);
             
             //creating SecureRandom (used for PKCS 1 padding randomness)
             SecureRandom rnd = SecureRandom.getInstanceStrong();
 
             //encrypt 
-            cipherText = Encrypt.enctryptWithPublicKey(decryptedMSG, relay, rnd);
+            cipherText = Encrypt.enctryptWithPublicKey(toEncrypt, relay, rnd);
         }
         return cipherText;
     }
@@ -253,6 +253,7 @@ public class Client
     }
     
 }
+
 
 
 
