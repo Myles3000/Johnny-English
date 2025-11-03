@@ -221,13 +221,15 @@ public class Client
         //encrypt the message with public key of receiver
         byte[] innerEncryption = Encrypt.enctryptWithPublicKey(toSend, PublicKeys.getPublicKey(receiver), rnd);
 		
+		
 
         //do an outer encryption of encrypted message with public key of the relay
         rnd = SecureRandom.getInstanceStrong();
         byte[] cipherTextBytes = Encrypt.enctryptWithPublicKey(innerEncryption, relay, rnd);
 
         //encode it for safer transport and send it relay
-        String cipherText = Base64.getEncoder().encodeToString(innerEncryption+"|"+receiver);
+        String c= Base64.getEncoder().encodeToString(innerEncryption);
+		String cipherText = c + "|"+ receiver; 
         writer.println(cipherText);
         writer.flush();
 
@@ -235,7 +237,7 @@ public class Client
 
     public static void receiveMsg(String msg) throws Exception
     {
-        byte[] m = Encrypt.stringToByte(msg);
+        byte[] m = Encrypt.stringToByte(separate);
         byte[] rcvMsg = Decrypt.decryptedFromPublicKey(m, privateKey);
 
         if(rcvMsg == null)
@@ -251,6 +253,7 @@ public class Client
     }
     
 }
+
 
 
 
