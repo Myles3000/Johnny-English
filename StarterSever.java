@@ -123,6 +123,8 @@ public class TCPSampleServer {
 					byte[] msg = Base64.getDecoder().decode(line[0]);
 					//String sqn = line[2];
 					//String msg = line[3];
+					System.out.println("Message to be send: " + msg);
+					System.out.println("List of current Clients: " + currentClients);
 
 					Socket receiver = currentClients.get(sender);
 					if(receiver != null && !receiver.isClosed()){
