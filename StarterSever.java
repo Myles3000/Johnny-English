@@ -56,6 +56,7 @@ public class TCPSampleServer {
 			String delimit = "|";
 			String sender = null;
 			SecureRandom rnd = SecureRandom.getInstanceStrong();
+			byte[] rubix = encode.stringToByte(challenge);
 			try {
 				BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
 				PrintWriter out = new PrintWriter(sock.getOutputStream(), true);
@@ -69,7 +70,7 @@ public class TCPSampleServer {
 					byte[] fullyDecode = decode.decryptedFromPrivateKey(partialDecode, clientKey);
 
 					// SECOND MSG: Encrypted with relay private key the encrypted with clients public key
-					String partialEncode = encode.enctryptWithPrivateKey(encode.stringToByte(challenge), keys.getPrivate());
+					String partialEncode = encode.enctryptWithPrivateKey(rubix, keys.getPrivate());
 					byte[] secondMsg = encode.enctryptWithPublicKey(encode.stringToByte(partialEncode + delimit + fullyDecode), clientKey, rnd);
 
 					out.println(secondMsg);
