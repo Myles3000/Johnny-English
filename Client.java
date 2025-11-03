@@ -63,7 +63,7 @@ public class Client
              *    MUTUAL AUTHENTICATION MODE!!
             */
             int sendCount = 0;
-            while(p.containsKey(userName) == false && sendCount < 2)
+            while(p.containsKey(userName) == false && sendCount < 1)
             {
                 sendCount++;
                 //get ecrypted message for mutual authentication msg
@@ -250,4 +250,5 @@ public class Client
     }
     
 }
+
 
