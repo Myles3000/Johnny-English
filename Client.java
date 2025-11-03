@@ -119,9 +119,10 @@ public class Client
             mutualAuthenticationRandomMSG = randomeMsg;
             byte[] m = Encrypt.stringToByte(randomeMsg);
             //encrypt with private key of client 
-            byte[] encrypt = Encrypt.enctryptWithPrivateKey(m, k.getPrivate());
+           // byte[] encrypt = Encrypt.enctryptWithPrivateKey(m, k.getPrivate());
+			
             //encrypt with public key of relay 
-            cipherText = Encrypt.enctryptWithPublicKey(encrypt, relay,  rnd);
+            cipherText = Encrypt.enctryptWithPublicKey(m, relay,  rnd);
 
         }
         else if(sendNum == 2)
@@ -249,3 +250,4 @@ public class Client
     }
     
 }
+
