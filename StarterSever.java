@@ -137,7 +137,7 @@ public class TCPSampleServer {
 							connect = in.readLine();
 							line = connect.split(delimit);
 							msg = Base64.getDecoder().decode(line[0]);
-						}while(sender.equals(line[1]));
+						} while(sender.equals(line[1]) && connect = in.readLine() != null);
 						//msg = sender + "|" + msg;
 						send.println(msg);
 					} else {
