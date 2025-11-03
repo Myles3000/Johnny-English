@@ -31,7 +31,7 @@ public class TCPSampleServer {
 		}
 	}
 
-	public static void main(String args[]) {
+	public static void main(String args[]) throws Exception{
 		RSAKeys locksmith = new RSAKeys();
 		KeyPair keys = locksmith.rsaKeysGenerator();
 		TCPSampleServer SampleServerObj = new TCPSampleServer();
@@ -55,9 +55,9 @@ public class TCPSampleServer {
 			Encrypt encode = new Encrypt();
 			String delimit = "|";
 			String sender = null;
-			SecureRandom rnd = SecureRandom.getInstanceStrong();
 			byte[] rubix = encode.stringToByte(challenge);
 			try {
+				SecureRandom rnd = SecureRandom.getInstanceStrong();
 				BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
 				PrintWriter out = new PrintWriter(sock.getOutputStream(), true);
 				PublicKey clientKey = pubKey.receivePublicKey(in);
@@ -116,7 +116,11 @@ public class TCPSampleServer {
 						out.println("Error: Target client " + target + " not found or disconnected");
 					}
 				}		
-			} catch (Exception e) {
+			} catch (IOException e) {
+				System.err.println("There was an IOexception " + e.getMessage());
+			} catch (NoSuchAlgorithmException e){
+				System.err.println("There was an NoSuchAlgorithmException " + e.getMessage());
+			} catch (Exception e){
 				e.printStackTrace();
 			} finally {
 				if (sender != null){
