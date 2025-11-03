@@ -121,7 +121,7 @@ public class TCPSampleServer {
 						//msg = sender + "|" + msg;
 						send.println(msg);
 					} else {
-						out.println("Error: Target client " + target + " not found or disconnected");
+						out.println("Error: Target client " + sender + " not found or disconnected");
 					}
 				}		
 				sock.close();
