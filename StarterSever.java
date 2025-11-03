@@ -55,7 +55,7 @@ public class TCPSampleServer {
 			Encrypt encode = new Encrypt();
 			String delimit = "|";
 			String sender = null;
-			SecureRandom rnd = SecureRandom.getInstanceStrong()
+			SecureRandom rnd = SecureRandom.getInstanceStrong();
 			try {
 				BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
 				PrintWriter out = new PrintWriter(sock.getOutputStream(), true);
