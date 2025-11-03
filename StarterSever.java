@@ -88,6 +88,9 @@ public class TCPSampleServer {
 					byte[] thirdMsg = Base64.getDecoder().decode(in.readLine());
 					String clientResponse = encode.byteToString(decode.decryptedFromPublicKey(thirdMsg, keys.getPrivate()));
 					String[] response = clientResponse.split(delimit);
+					
+					System.out.println("Response 0: " + response[0]);
+					System.out.println("Server wanted: " + challenge);
 
 					if(response[0].equals(challenge)){
 						System.out.println("client authentication has been successful!");
