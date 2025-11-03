@@ -63,7 +63,7 @@ public class Client
              *    MUTUAL AUTHENTICATION MODE!!
             */
             int sendCount = 0;
-            while(p.containsKey(userName) == false && sendCount < 1)
+            while(p.containsKey(userName) == false && sendCount < 2)
             {
                 sendCount++;
                 //get ecrypted message for mutual authentication msg
@@ -154,7 +154,7 @@ public class Client
             SecureRandom rnd = SecureRandom.getInstanceStrong();
 
             //encrypt 
-            cipherText = Encrypt.enctryptWithPublicKey(toEncrypt, relay, rnd);
+            cipherText = Encrypt.enctryptWithPublicKey(decryptedMSG, relay, rnd);
         }
         return cipherText;
     }
@@ -220,13 +220,14 @@ public class Client
 
         //encrypt the message with public key of receiver
         byte[] innerEncryption = Encrypt.enctryptWithPublicKey(toSend, PublicKeys.getPublicKey(receiver), rnd);
+		
 
         //do an outer encryption of encrypted message with public key of the relay
         rnd = SecureRandom.getInstanceStrong();
         byte[] cipherTextBytes = Encrypt.enctryptWithPublicKey(innerEncryption, relay, rnd);
 
         //encode it for safer transport and send it relay
-        String cipherText = Base64.getEncoder().encodeToString(cipherTextBytes);
+        String cipherText = Base64.getEncoder().encodeToString(innerEncryption+"|"+receiver);
         writer.println(cipherText);
         writer.flush();
 
@@ -250,5 +251,6 @@ public class Client
     }
     
 }
+
 
 
