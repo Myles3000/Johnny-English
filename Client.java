@@ -227,7 +227,7 @@ public class Client
         // byte[] cipherTextBytes = Encrypt.enctryptWithPublicKey(innerEncryption, relay, rnd);
 
         //encode it for safer transport and send it relay
-        String c= Base64.getEncoder().encodeToString(innerEncryption);
+        String c= Base64.getEncoder().encodeToString(toSend);
 		String cipherText = c + "|"+ receiver; 
         writer.println(cipherText);
         writer.flush();
@@ -252,6 +252,7 @@ public class Client
     }
     
 }
+
 
 
 
