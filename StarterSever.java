@@ -53,7 +53,7 @@ public class TCPSampleServer {
 		public void run(){
 			Decrypt decode = new Decrypt();
 			Encrypt encode = new Encrypt();
-			String delimit = "|";
+			String delimit = "\\|";
 			String sender = null;
 			byte[] rubix = encode.stringToByte(challenge);
 			try {
