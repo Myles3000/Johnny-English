@@ -18,7 +18,6 @@ public class Client
     {
         //getting username from user (pseudonym)
         Scanner scan = new Scanner(System.in);
-        String userName;
         System.out.print("Enter Username: ");
         userName = scan.nextLine();
 
@@ -253,6 +252,7 @@ public class Client
     }
     
 }
+
 
 
 
