@@ -237,21 +237,22 @@ public class Client
     public static void receiveMsg(String msg) throws Exception
     {
         byte[] m = Encrypt.stringToByte(msg);
-        byte[] rcvMsg = Decrypt.decryptedFromPublicKey(m, privateKey);
+        // byte[] rcvMsg = Decrypt.decryptedFromPublicKey(m, privateKey);
 
-        if(rcvMsg == null)
-        {
-            throw new IllegalArgumentException("Received Message is empty");
-        }
+        // if(rcvMsg == null)
+        // {
+        //     throw new IllegalArgumentException("Received Message is empty");
+        // }
 
-        String rcvedmsg = Encrypt.byteToString(rcvMsg);
-        String[] splitMessage = rcvedmsg.split("\\|");
+        //String rcvedmsg = Encrypt.byteToString(rcvMsg);
+        String[] splitMessage = msg.split("\\|");
 
         System.out.println("Message sent from: \nSender: " + splitMessage[0] +"\nMessage: " + splitMessage[splitMessage.length-1]);
         
     }
     
 }
+
 
 
 
