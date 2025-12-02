@@ -5,7 +5,7 @@ import java.net.*;
 import java.security.*;
 import java.util.*;
 
-public class TCPSampleServer {
+public class Server{
 	static PublicKeys usersPub = new PublicKeys();
 	private HashMap<String, Socket> currentClients = new HashMap<>();
 	private HashMap<String, PublicKey> authClients = new HashMap<>();
@@ -31,17 +31,35 @@ public class TCPSampleServer {
 		}
 	}
 
+	private String gauntlet() throws FileNotFoundException{
+		String challenge = "";
+		Vector<String> maze = new Vector<>();
+		File file = new File("challenge.txt");
+      
+        Scanner sc = new Scanner(file);
+
+        while (sc.hasNextLine()){
+			maze.add(sc.nextLine());
+    	}
+		Random rand = new Random();
+
+		int lucky = rand.nextInt(maze.size() + 1);
+
+		challenge = maze.elementAt(lucky);
+
+		return challenge;
+	}
+
 	public static void main(String args[]) throws Exception{
 		RSAKeys locksmith = new RSAKeys();
 		KeyPair keys = locksmith.rsaKeysGenerator(2048);
-		TCPSampleServer SampleServerObj = new TCPSampleServer();
+		Server SampleServerObj = new Server();
 		SampleServerObj.go(keys);
 	}
 
 	private class ClientHandler implements Runnable{
 		private Socket sock;
 		private KeyPair keys;
-		private String challenge = "RickRolled";
 		private ReceivePublicKey pubKey = new ReceivePublicKey();
 
 		ClientHandler(Socket sock, KeyPair keys) {
@@ -55,8 +73,9 @@ public class TCPSampleServer {
 			Encrypt encode = new Encrypt();
 			String delimit = "\\|";
 			String sender = null;
-			byte[] rubix = encode.stringToByte(challenge);
 			try {
+				String challenge = gauntlet();
+				byte[] rubix = encode.stringToByte(challenge);
 				SecureRandom rnd = SecureRandom.getInstanceStrong();
 				BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
 				PrintWriter out = new PrintWriter(sock.getOutputStream(), true);
