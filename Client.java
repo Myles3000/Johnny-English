@@ -30,7 +30,9 @@ public class Client
 
 
         //generated rsa key 
-        KeyPair rsakey = RSAKeys.rsaKeysGenerator();
+        KeyPair clientRSAkey = RSAKeys.rsaKeysGenerator(1024);
+        //NEED TO MAKE RELAY'S RSA KEY 2048
+        
 
         //THIS IS WHAT THE SERVER DOES AFTER A SUCCESSFUL MUTUAL AUTHENTICATION 
         // //storing public key in a public class for all to use 
@@ -38,8 +40,8 @@ public class Client
         // p.addPublicKey(userName, rsakey.getPublic());
 
         //getting public and private keys 
-        publicKey = rsakey.getPublic();
-        privateKey = rsakey.getPrivate();
+        publicKey = clientRSAkey.getPublic();
+        privateKey = clientRSAkey.getPrivate();
 
         byte[] message;
         String receivedMSG = null;
@@ -66,7 +68,7 @@ public class Client
             {
                 sendCount++;
                 //get ecrypted message for mutual authentication msg
-                message = mutualAuthentication(rsakey, relaysPublicKey, sendCount, receivedMSG);
+                message = mutualAuthentication(clientRSAkey, relaysPublicKey, sendCount, receivedMSG);
 
                 //encode it for safer transport and send it relay
                 String cipherText = Base64.getEncoder().encodeToString(message);
@@ -118,7 +120,7 @@ public class Client
             mutualAuthenticationRandomMSG = randomeMsg;
             byte[] m = Encrypt.stringToByte(randomeMsg);
             //encrypt with private key of client 
-           // byte[] encrypt = Encrypt.enctryptWithPrivateKey(m, k.getPrivate());
+            byte[] encrypt = Encrypt.enctryptWithPrivateKey(m, k.getPrivate());
 			
             //encrypt with public key of relay 
             cipherText = Encrypt.enctryptWithPublicKey(m, relay,  rnd);
@@ -128,26 +130,26 @@ public class Client
         {
             //decrypt the public key encryption using private key 
             byte[] rcvedMSG = Encrypt.stringToByte(receivedMSG);
-            //byte[] decryptedMSG= Decrypt.decryptedFromPublicKey(rcvedMSG, k.getPrivate());
+            byte[] decryptedMSG= Decrypt.decryptedFromPublicKey(rcvedMSG, k.getPrivate());
 
-            // //get a treemap with exntrypeted data and string separated by the delimeter
-            // TreeMap<byte[], String> delimiterSeparated = split(decryptedMSG);
-            // //separate them out 
-            // byte[] dec1 = delimiterSeparated.firstKey();
-            // String msg = delimiterSeparated.get(dec1);
-            // //check if received challage msg is correct 
-            // if(msg.compareTo(mutualAuthenticationRandomMSG) != 0)
-            // {
-            //     throw new IllegalArgumentException("Send challenge message and received messages do not Match");
-            // }
+            //get a treemap with exntrypeted data and string separated by the delimeter
+            TreeMap<byte[], String> delimiterSeparated = split(decryptedMSG);
+            //separate them out 
+            byte[] dec1 = delimiterSeparated.firstKey();
+            String msg = delimiterSeparated.get(dec1);
+            //check if received challage msg is correct 
+            if(msg.compareTo(mutualAuthenticationRandomMSG) != 0)
+            {
+                throw new IllegalArgumentException("Send challenge message and received messages do not Match");
+            }
 
-            // //decrypt second part of received msg 
-            // byte[] fulldecryption = Decrypt.decryptedFromPrivateKey(dec1, relay);
+            //decrypt second part of received msg 
+            byte[] fulldecryption = Decrypt.decryptedFromPrivateKey(dec1, relay);
             
-            // //encrypt decrypted relay challege with username of client -> | delimeter  
-            // String challenge = Encrypt.byteToString(fulldecryption);
-            String toSend = "RickRolled" + "|" + userName;
-            byte[] toEncrypt = Encrypt.stringToByte(toSend);
+            //encrypt decrypted relay challege with username of client -> | delimeter  
+            String challenge = Encrypt.byteToString(fulldecryption);
+            //String toSend = "RickRolled" + "|" + userName;
+            byte[] toEncrypt = Encrypt.stringToByte(challenge);
             
             //creating SecureRandom (used for PKCS 1 padding randomness)
             SecureRandom rnd = SecureRandom.getInstanceStrong();
@@ -207,24 +209,24 @@ public class Client
 
     public static void sendMsg(String receiver, PublicKey relay, String msg, PrintWriter writer) throws Exception
     {
-        // if(pubKeys.containsKey(receiver) == false)
-        // {
-        //     throw new IllegalArgumentException("Receiver with that username does not exist");
-        // }
+        if(pubKeys.containsKey(receiver) == false)
+        {
+            throw new IllegalArgumentException("Receiver with that username does not exist");
+        }
         String msgFormat = userName + "|" + receiver + "|" + sequenceNumber + "|" + msg;
         byte[] toSend = Encrypt.stringToByte(msgFormat);
 
-        // //creating SecureRandom (used for PKCS 1 padding randomness)
-        // SecureRandom rnd = SecureRandom.getInstanceStrong();
+        //creating SecureRandom (used for PKCS 1 padding randomness)
+        SecureRandom rnd = SecureRandom.getInstanceStrong();
 
-        // //encrypt the message with public key of receiver
-        // byte[] innerEncryption = Encrypt.enctryptWithPublicKey(toSend, PublicKeys.getPublicKey(receiver), rnd);
+        //encrypt the message with public key of receiver
+        byte[] innerEncryption = Encrypt.enctryptWithPublicKey(toSend, PublicKeys.getPublicKey(receiver), rnd);
 		
 		
 
-        // //do an outer encryption of encrypted message with public key of the relay
-        // rnd = SecureRandom.getInstanceStrong();
-        // byte[] cipherTextBytes = Encrypt.enctryptWithPublicKey(innerEncryption, relay, rnd);
+        //do an outer encryption of encrypted message with public key of the relay
+        rnd = SecureRandom.getInstanceStrong();
+        byte[] cipherTextBytes = Encrypt.enctryptWithPublicKey(innerEncryption, relay, rnd);
 
         //encode it for safer transport and send it relay
         String c= Base64.getEncoder().encodeToString(toSend);
@@ -237,12 +239,12 @@ public class Client
     public static void receiveMsg(String msg) throws Exception
     {
         byte[] m = Encrypt.stringToByte(msg);
-        // byte[] rcvMsg = Decrypt.decryptedFromPublicKey(m, privateKey);
+        byte[] rcvMsg = Decrypt.decryptedFromPublicKey(m, privateKey);
 
-        // if(rcvMsg == null)
-        // {
-        //     throw new IllegalArgumentException("Received Message is empty");
-        // }
+        if(rcvMsg == null)
+        {
+            throw new IllegalArgumentException("Received Message is empty");
+        }
 
         //String rcvedmsg = Encrypt.byteToString(rcvMsg);
         String[] splitMessage = msg.split("\\|");
