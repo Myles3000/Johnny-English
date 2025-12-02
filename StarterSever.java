@@ -33,7 +33,7 @@ public class TCPSampleServer {
 
 	public static void main(String args[]) throws Exception{
 		RSAKeys locksmith = new RSAKeys();
-		KeyPair keys = locksmith.rsaKeysGenerator();
+		KeyPair keys = locksmith.rsaKeysGenerator(2048);
 		TCPSampleServer SampleServerObj = new TCPSampleServer();
 		SampleServerObj.go(keys);
 	}
