@@ -4,13 +4,13 @@ import java.security.*;
 
 public class RSAKeys {
 
-    public static KeyPair rsaKeysGenerator() throws Exception
+    public static KeyPair rsaKeysGenerator(int keySize) throws Exception
     {
         //keypairgenerator instance to create keys with 
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
 
         //key size (using 1024 for now )
-        keyPairGenerator.initialize(1024); 
+        keyPairGenerator.initialize(keySize); 
 
         //creating keypair 
         KeyPair keyPair = keyPairGenerator.generateKeyPair();
