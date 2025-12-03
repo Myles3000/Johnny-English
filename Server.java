@@ -46,6 +46,7 @@ public class Server{
 		int lucky = rand.nextInt(maze.size() + 1);
 
 		challenge = maze.elementAt(lucky);
+		sc.close();
 
 		return challenge;
 	}
@@ -97,7 +98,7 @@ public class Server{
 					//byte[] fullyDecode = decode.decryptedFromPrivateKey(partialDecode, clientKey);
 
 					// SECOND MSG: Encrypted with relay private key the encrypted with clients public key
-					byte[] partialEncode = encode.enctryptWithPublicKey(rubix, clientKey, rnd);
+					byte[] partialEncode = encode.enctryptWithPrivateKey(rubix, keys.getPrivate());
 					String temp =  Base64.getEncoder().encodeToString(partialEncode);
 					//byte[] secondMsg = encode.enctryptWithPublicKey(encode.stringToByte(temp + delimit + fullyDecode), clientKey, rnd);
 
