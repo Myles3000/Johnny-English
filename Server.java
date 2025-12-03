@@ -95,14 +95,15 @@ public class Server{
 
 					//byte[] firstMsg = Base64.getDecoder().decode(in.readLine());
 					byte[] partialDecode = decode.decryptedFromPublicKey(firstMsg, keys.getPrivate());
-					//byte[] fullyDecode = decode.decryptedFromPrivateKey(partialDecode, clientKey);
+					byte[] fullyDecode = decode.decryptedFromPrivateKey(partialDecode, clientKey);
 
 					// SECOND MSG: Encrypted with relay private key the encrypted with clients public key
 					byte[] partialEncode = encode.enctryptWithPrivateKey(rubix, keys.getPrivate());
 					String temp =  Base64.getEncoder().encodeToString(partialEncode);
-					//byte[] secondMsg = encode.enctryptWithPublicKey(encode.stringToByte(temp + delimit + fullyDecode), clientKey, rnd);
+					byte[] secondMsg = encode.enctryptWithPublicKey(encode.stringToByte(temp + delimit + fullyDecode), clientKey, rnd);
+					String cipherText = Base64.getEncoder().encodeToString(secondMsg);
 
-					out.println(temp);
+					out.println(cipherText);
 
 					String l = in.readLine();
 
