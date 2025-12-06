@@ -14,7 +14,7 @@ public class Server{
 		
 		try{
 			//Create a server socket at port 7777
-			ServerSocket serverSock = new ServerSocket(7777);
+			ServerSocket serverSock = new ServerSocket(5000);
 			//Server goes into a permanent loop accepting connections from clients			
 			while(true)
 			{
@@ -72,7 +72,7 @@ public class Server{
 		public void run(){
 			Decrypt decode = new Decrypt();
 			Encrypt encode = new Encrypt();
-			String delimit = "\\|";
+			String delimit = "|";
 			String sender = null;
 			try {
 				String challenge = gauntlet();
@@ -96,11 +96,14 @@ public class Server{
 					//byte[] firstMsg = Base64.getDecoder().decode(in.readLine());
 					byte[] partialDecode = decode.decryptedFromPublicKey(firstMsg, keys.getPrivate());
 					byte[] fullyDecode = decode.decryptedFromPrivateKey(partialDecode, clientKey);
-
+                    System.out.println(Encrypt.byteToString(fullyDecode));
 					// SECOND MSG: Encrypted with relay private key the encrypted with clients public key
-					byte[] partialEncode = encode.enctryptWithPrivateKey(rubix, keys.getPrivate());
-					String temp =  Base64.getEncoder().encodeToString(partialEncode);
-					byte[] secondMsg = encode.enctryptWithPublicKey(encode.stringToByte(temp + delimit + fullyDecode), clientKey, rnd);
+					
+                    //byte[] partialEncode = encode.enctryptWithPrivateKey(rubix, keys.getPrivate());
+					//String temp =  Base64.getEncoder().encodeToString(partialEncode);
+                    String msg = Encrypt.byteToString(rubix) + delimit + Encrypt.byteToString(fullyDecode);
+                    System.out.println(msg);
+					byte[] secondMsg = encode.enctryptWithPublicKey(encode.stringToByte(msg), clientKey, rnd);
 					String cipherText = Base64.getEncoder().encodeToString(secondMsg);
 
 					out.println(cipherText);
