@@ -123,7 +123,11 @@ public class Server{
 
 					if(response[0].equals(challenge)){
 						System.out.println("client authentication has been successful!");
-						out.println("Your have been succefully authenticated and your public key has been documented");
+						out.println("Your have been succefully authenticated and your public key has been documented!");
+						out.println("Here are all of the current users public keys.");
+						for (Map.Entry<String, PublicKey>
+                 			entry : authClients.entrySet())
+            				SendPublicKey.sendPublicKeyUser(entry.getKey(), entry.getValue(), out);
 						authClients.put(response[1], clientKey);
 						usersPub.addPublicKey(response[1], clientKey);
 						System.out.println(usersPub.containsKey(response[1]));
