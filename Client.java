@@ -50,15 +50,17 @@ public class Client
 		try
 		{
 			//Create a client socket and connect to server at 127.0.0.1 port 5000
-			Socket clientSocket = new Socket("net01",7777);
+			Socket clientSocket = new Socket("localhost",5000);
+            System.out.println("connected");
 			
 			BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             PrintWriter writer = new PrintWriter(clientSocket.getOutputStream(), true);
 
+            System.out.println("sending pk");
             //FIRST SEND: sending public key to relay 
             SendPublicKey.sendPublicKey(publicKey, writer);
             relaysPublicKey = ReceivePublicKey.receivePublicKey(reader);
-            
+            System.out.println("pk sent");            
 
             /* while the relay has not placed the username and public key into the publickeys map, we are in 
              *    MUTUAL AUTHENTICATION MODE!!
@@ -67,6 +69,7 @@ public class Client
             while(p.containsKey(userName) == false && sendCount < 2)
             {
                 sendCount++;
+                System.out.println("Here, send count = " + sendCount);
                 //get ecrypted message for mutual authentication msg
                 message = mutualAuthentication(clientRSAkey, relaysPublicKey, sendCount, receivedMSG);
 
@@ -107,10 +110,12 @@ public class Client
     {
         
         byte [] cipherText = null;
+        System.out.println("IN MUTUAL AUTH");
 
         //FIRST MSG: Send (msg with E_privateKey)E_relayPublicKey
         if(sendNum == 1)
         {
+            System.out.println("!11111");
             int randomNum = (int) (Math.random() * 1000);
 
             //creating SecureRandom (used for PKCS 1 padding randomness)
@@ -121,35 +126,43 @@ public class Client
             byte[] m = Encrypt.stringToByte(randomeMsg);
             //encrypt with private key of client 
             byte[] encrypt = Encrypt.enctryptWithPrivateKey(m, k.getPrivate());
-			
+			// ✅ Real local verification:
+byte[] recovered = Decrypt.decryptedFromPrivateKey(encrypt, k.getPublic());
+System.out.println("Local verify OK? " + Encrypt.byteToString(recovered));
             //encrypt with public key of relay 
-            cipherText = Encrypt.enctryptWithPublicKey(m, relay,  rnd);
+            cipherText = Encrypt.enctryptWithPublicKey(encrypt, relay,  rnd);
 
         }
         else if(sendNum == 2)
         {
             //decrypt the public key encryption using private key 
-            byte[] rcvedMSG = Encrypt.stringToByte(receivedMSG);
+            byte[] rcvedMSG = Base64.getDecoder().decode(receivedMSG);
             byte[] decryptedMSG= Decrypt.decryptedFromPublicKey(rcvedMSG, k.getPrivate());
-
+            System.out.println(Encrypt.byteToString(decryptedMSG));
+            String fullmsg = Encrypt.byteToString(decryptedMSG);
+            System.out.println(fullmsg);
+            String[] rcved = fullmsg.split("\\|");
             //get a treemap with exntrypeted data and string separated by the delimeter
-            TreeMap<byte[], String> delimiterSeparated = split(decryptedMSG);
+            //TreeMap<byte[], String> delimiterSeparated = split(decryptedMSG);
             //separate them out 
-            byte[] dec1 = delimiterSeparated.firstKey();
-            String msg = delimiterSeparated.get(dec1);
+            //byte[] dec1 = delimiterSeparated.firstKey();
+            //String msg = delimiterSeparated.get(dec1);
             //check if received challage msg is correct 
-            if(msg.compareTo(mutualAuthenticationRandomMSG) != 0)
+            System.out.println("recved: " + rcved[1]);
+            System.out.println("sent: "+ mutualAuthenticationRandomMSG);
+            if(rcved[1].compareTo(mutualAuthenticationRandomMSG) != 0)
             {
-                throw new IllegalArgumentException("Send challenge message and received messages do not Match");
+                throw new IllegalArgumentException("Sent challenge message and received messages do not Match");
             }
 
             //decrypt second part of received msg 
-            byte[] fulldecryption = Decrypt.decryptedFromPrivateKey(dec1, relay);
+            //byte[] fulldecryption = Decrypt.decryptedFromPrivateKey(dec1, relay);
             
             //encrypt decrypted relay challege with username of client -> | delimeter  
-            String challenge = Encrypt.byteToString(fulldecryption);
+            //String challenge = Encrypt.byteToString(fulldecryption);
             //String toSend = "RickRolled" + "|" + userName;
-            byte[] toEncrypt = Encrypt.stringToByte(challenge);
+            String thrirdMsg = rcved[0] + "|" + userName;
+            byte[] toEncrypt = Encrypt.stringToByte(thrirdMsg);
             
             //creating SecureRandom (used for PKCS 1 padding randomness)
             SecureRandom rnd = SecureRandom.getInstanceStrong();
@@ -181,14 +194,15 @@ public class Client
 
         //left = encrypted msg (expected Base64 text)
         byte[] left = Arrays.copyOfRange(decryptedBytes, 0, delim);
+        System.out.println(Encrypt.byteToString(left));
         
         //right = string msg (expected UTF-8 string)
         byte[] right = Arrays.copyOfRange(decryptedBytes, delim + 1, decryptedBytes.length);
-
+        System.out.println(Encrypt.byteToString(right));
         //triming possible whitespace/newlines around base64 and string
         String encmsg = new String(left, StandardCharsets.US_ASCII).trim(); 
         String str = new String(right, StandardCharsets.UTF_8).trim();
-
+        System.out.println(encmsg + "\t\t" + str);
         //decode left part from Base64 -> encrypted bytes
         byte[] encryptedBytes;
         try 
@@ -209,10 +223,10 @@ public class Client
 
     public static void sendMsg(String receiver, PublicKey relay, String msg, PrintWriter writer) throws Exception
     {
-        if(pubKeys.containsKey(receiver) == false)
-        {
-            throw new IllegalArgumentException("Receiver with that username does not exist");
-        }
+        // if(pubKeys.containsKey(receiver) == false)
+        // {
+        //     throw new IllegalArgumentException("Receiver with that username does not exist");
+        // }
         String msgFormat = userName + "|" + receiver + "|" + sequenceNumber + "|" + msg;
         byte[] toSend = Encrypt.stringToByte(msgFormat);
 
