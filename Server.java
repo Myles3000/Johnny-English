@@ -68,6 +68,18 @@ public class Server{
 			this.keys = keys;
 		}
 
+		private void newUser(String user, PublicKey clientKey, PrintWriter out) throws IOException{
+			for (Map.Entry<String, PublicKey> entry : authClients.entrySet()){
+				SendPublicKey.sendPublicKeyUser(entry.getKey(), entry.getValue(), out);
+				Socket update = currentClients.get(entry.getKey());
+				if(update != null && !update.isClosed()){
+					PrintWriter send = new PrintWriter(update.getOutputStream(), true);
+					send.println("A new user has been added, here is their public key");
+					SendPublicKey.sendPublicKeyUser(user, clientKey, send);
+				}
+			}
+		}
+
 		@Override
 		public void run(){
 			Decrypt decode = new Decrypt();
@@ -125,9 +137,7 @@ public class Server{
 						System.out.println("client authentication has been successful!");
 						out.println("Your have been succefully authenticated and your public key has been documented!");
 						out.println("Here are all of the current users public keys.");
-						for (Map.Entry<String, PublicKey>
-                 			entry : authClients.entrySet())
-            				SendPublicKey.sendPublicKeyUser(entry.getKey(), entry.getValue(), out);
+						newUser(response[1], clientKey, out);
 						authClients.put(response[1], clientKey);
 						usersPub.addPublicKey(response[1], clientKey);
 						System.out.println(usersPub.containsKey(response[1]));
