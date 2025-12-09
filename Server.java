@@ -43,7 +43,7 @@ public class Server{
     	}
 		Random rand = new Random();
 
-		int lucky = rand.nextInt(maze.size() + 1);
+		int lucky = rand.nextInt(maze.size() - 1);
 
 		challenge = maze.elementAt(lucky);
 		sc.close();
@@ -69,13 +69,15 @@ public class Server{
 		}
 
 		private void newUser(String user, PublicKey clientKey, PrintWriter out) throws IOException{
-			for (Map.Entry<String, PublicKey> entry : authClients.entrySet()){
-				SendPublicKey.sendPublicKeyUser(entry.getKey(), entry.getValue(), out);
+			for (Map.Entry<String, PublicKey> entry : authClients.entrySet())
+			{
+				//SendPublicKey.sendPublicKey(entry.getValue(), out);
 				Socket update = currentClients.get(entry.getKey());
 				if(update != null && !update.isClosed()){
 					PrintWriter send = new PrintWriter(update.getOutputStream(), true);
-					send.println("A new user has been added, here is their public key");
-					SendPublicKey.sendPublicKeyUser(user, clientKey, send);
+					String broadcastMSG = "A new user has been added, here is their public key. Name: " + user;
+					send.println(broadcastMSG);
+					SendPublicKey.sendPublicKey(clientKey, send);
 				}
 			}
 		}
@@ -85,7 +87,7 @@ public class Server{
 			Decrypt decode = new Decrypt();
 			Encrypt encode = new Encrypt();
 			String delimit = "|";
-			String sender = null;
+			String receiver = null;
 			try {
 				String challenge = gauntlet();
 				byte[] rubix = encode.stringToByte(challenge);
@@ -136,13 +138,31 @@ public class Server{
 					if(response[0].equals(challenge)){
 						System.out.println("client authentication has been successful!");
 						out.println("Your have been succefully authenticated and your public key has been documented!");
-						if(authClients != null){
+						if(!authClients.isEmpty()){
+
+							//sending all authenticated clients to new client 
 							out.println("Here are all of the current users public keys.");
+							for (Map.Entry<String, PublicKey> entry : authClients.entrySet()) 
+							{
+								String clientList = "Name: " + entry.getKey();
+								out.println(clientList);
+								SendPublicKey.sendPublicKey(entry.getValue(), out);
+							}
+							out.println("All current clients listed");
+							
+							//broacasting new client to existing users and registering client in private map
 							newUser(response[1], clientKey, out);
 							authClients.put(response[1], clientKey);
 							usersPub.addPublicKey(response[1], clientKey);
 							System.out.println(usersPub.containsKey(response[1]));
 							
+						}
+						else
+						{
+							//client is the only one in the system 
+							out.println("You are the only user in the system, please wait for other to connect before chatting");
+							authClients.put(response[1], clientKey);
+							usersPub.addPublicKey(response[1], clientKey);
 						}
 					}else {
 						System.out.println("Authentication failed for " + sock.getInetAddress());
@@ -156,39 +176,45 @@ public class Server{
 
 				String connect;
 				while((connect = in.readLine()) != null) {
+					
+					//get message
+					byte[] firstMsg = Base64.getDecoder().decode(connect);
 
-					//String code = new String(decode.decryptedFromPublicKey(encode.stringToByte(connect), keys.getPrivate()));
-
-					String[] line = connect.split(delimit);
-					sender = line[1];
+					//decrypt outer shell
+					byte[] partialDecode = decode.decryptedFromPublicKey(firstMsg, keys.getPrivate());
+					String pd = Encrypt.byteToString(partialDecode);
+					String[] line = pd.split("\\|");
+					
+					receiver = line[1];
+					
 					byte[] msg = Base64.getDecoder().decode(line[0]);
-					//String sqn = line[2];
-					//String msg = line[3];
-					System.out.println("Message to be send: " + msg);
-					System.out.println("List of current Clients: " + currentClients);
 
-					Socket receiver = currentClients.get(sender);
+					System.out.println(line[0]);
+					
+					Socket receiverSocket = currentClients.get(receiver);
 					System.out.println("The socket we will be sending to is: " + receiver);
-					System.out.println("Were are sending the message to the user: " + sender);
+					System.out.println("Were are sending the message to the user: " + receiver);
 
-					if(receiver != null && !receiver.isClosed()){
-						PrintWriter send = new PrintWriter(receiver.getOutputStream(), true);
-						//msg = sender + "|" + msg;
-						send.println(msg);
+					if(receiver != null && !receiverSocket.isClosed()){
+						PrintWriter send = new PrintWriter(receiverSocket.getOutputStream(), true);
+						//msg = receiver + "|" + msg;
+						send.println("Incoming MSG");
+						send.println(line[0]);
 					} else {
-						out.println("Error: Target client " + sender + " not found or disconnected");
+						out.println("Error: Target client " + receiver + " not found or disconnected");
 					}
 				}		
 				//sock.close();
 			} catch (IOException e) {
 				System.err.println("There was an IOexception " + e.getMessage());
+
 			} catch (NoSuchAlgorithmException e){
 				System.err.println("There was an NoSuchAlgorithmException " + e.getMessage());
 			} catch (Exception e){
 				e.printStackTrace();
 			} finally {
-				if (sender != null){
-					currentClients.remove(sender);
+				if (receiver != null){
+					currentClients.remove(receiver);
 				}
 			}
 		}
