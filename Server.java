@@ -136,11 +136,14 @@ public class Server{
 					if(response[0].equals(challenge)){
 						System.out.println("client authentication has been successful!");
 						out.println("Your have been succefully authenticated and your public key has been documented!");
-						out.println("Here are all of the current users public keys.");
-						newUser(response[1], clientKey, out);
-						authClients.put(response[1], clientKey);
-						usersPub.addPublicKey(response[1], clientKey);
-						System.out.println(usersPub.containsKey(response[1]));
+						if(authClients != null){
+							out.println("Here are all of the current users public keys.");
+							newUser(response[1], clientKey, out);
+							authClients.put(response[1], clientKey);
+							usersPub.addPublicKey(response[1], clientKey);
+							System.out.println(usersPub.containsKey(response[1]));
+							
+						}
 					}else {
 						System.out.println("Authentication failed for " + sock.getInetAddress());
 						sock.close();
