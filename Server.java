@@ -89,6 +89,7 @@ public class Server{
 			String delimit = "|";
 			String receiver = null;
 			try {
+				File logger = new File("Logger.txt");
 				String challenge = gauntlet();
 				byte[] rubix = encode.stringToByte(challenge);
 				SecureRandom rnd = SecureRandom.getInstanceStrong();
@@ -96,6 +97,7 @@ public class Server{
 				PrintWriter out = new PrintWriter(sock.getOutputStream(), true);
 				PublicKey clientKey = pubKey.receivePublicKey(in);
 				SendPublicKey.sendPublicKey(keys.getPublic(), out);
+				BufferedWriter log = new BufferedWriter(new FileWriter(logger));
 
 
 				if(!authClients.containsValue(clientKey)){
@@ -106,6 +108,7 @@ public class Server{
 					    return;
 					}
 					byte[] firstMsg = Base64.getDecoder().decode(line);
+					log.write("RELAY RECEIVED: " + line);
 
 					//byte[] firstMsg = Base64.getDecoder().decode(in.readLine());
 					byte[] partialDecode = decode.decryptedFromPublicKey(firstMsg, keys.getPrivate());
@@ -192,8 +195,8 @@ public class Server{
 					System.out.println(line[0]);
 					
 					Socket receiverSocket = currentClients.get(receiver);
-					System.out.println("The socket we will be sending to is: " + receiver);
-					System.out.println("Were are sending the message to the user: " + receiver);
+					log.write("SERVER RECEIVED:\n FULLY ENCRYPTED MSG: " + firstMsg + "\n RECEIVER: " + receiver + 
+					"\n INNER ENCRYPTION: " + partialDecode);
 
 					if(receiver != null && !receiverSocket.isClosed()){
 						PrintWriter send = new PrintWriter(receiverSocket.getOutputStream(), true);

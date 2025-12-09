@@ -1,4 +1,7 @@
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -13,7 +16,7 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class c {
+public class Client {
 
     //TreeMap<String> mutualAuthentication = new TreeMap<>();
     static String mutualAuthenticationRandomMSG = null;
@@ -177,7 +180,8 @@ public class c {
 
     private static void listenLoop(BufferedReader reader) throws Exception {
         String receivedMSG;
-         
+        File logger = new File("Logger.txt");
+        BufferedWriter log = new BufferedWriter(new FileWriter(logger)); 
 
             //communication between clients
             while((receivedMSG = reader.readLine()) != null)
@@ -268,6 +272,8 @@ public class c {
         String innerBase64;
         SecureRandom rnd;
         String msgFormat;
+        File logger = new File("Logger.txt");
+        BufferedWriter log = new BufferedWriter(new FileWriter(logger));
 
         //creating SecureRandom (used for PKCS 1 padding randomness)
         rnd = SecureRandom.getInstanceStrong();
@@ -283,8 +289,8 @@ public class c {
             //random seq number and populate table
             seq = sequenceNumber;
             sequenceNumbers.put(receiver, ++sequenceNumber);
-            BigInteger a = DH.generatePrivate(rnd);
-            BigInteger A = DH.computePublic(a);
+            //BigInteger a = DH.generatePrivate(rnd);
+            //BigInteger A = DH.computePublic(a);
             msgFormat =  userName + "|" + receiver + "|" + seq + "|" + msg;
         }
         else
@@ -318,6 +324,10 @@ public class c {
         rnd = SecureRandom.getInstanceStrong();
         byte[] cipherTextBytes = Encrypt.enctryptWithPublicKey(innerEncryptionWithRcverByte, relay, rnd);
 
+        //update Logger
+        log.write("CLIENT SENT:\n USERNAME: " + userName + "\n RECEIVER: " + receiver + "\n MSG: " + msg + 
+        "\n INNER ENCRYPT: " +  innerEncryptionWithRcver + "\n DOUBLE ENCRYPT: " + cipherTextBytes);
+
         //encode it for safer transport and send it relay
         String cipherText= Base64.getEncoder().encodeToString(cipherTextBytes);
 		//String cipherText = c + "|"+ receiver; 
@@ -330,6 +340,8 @@ public class c {
     {
         byte[] m = Base64.getDecoder().decode(msg);
         byte[] rcvMsg = Decrypt.decryptedFromPublicKey(m, privateKey);
+        File logger = new File("Logger.txt");
+        BufferedWriter log = new BufferedWriter(new FileWriter(logger));
 
         if(rcvMsg == null)
         {
@@ -345,6 +357,9 @@ public class c {
             System.out.println("DEBUG: Bad plaintext format: " + decryptedMSG);
             return;
         }
+
+        log.write("CLIENT RECEIVED \n SENDER: " + splitMessage[0] + "\n MESSAGE: " + m 
+        + "\n FULLY DECRYPTED MSG: " + splitMessage[splitMessage.length-1]);
 
         // if(Integer.parseInt(splitMessage[splitMessage.length-2]) != sequenceNumbers.get(splitMessage[0]))
         // {
