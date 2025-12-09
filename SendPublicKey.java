@@ -14,26 +14,8 @@ public class SendPublicKey {
 
             //encode the bytes into text safe string 
             String base64Key = Base64.getEncoder().encodeToString(keyBytes);
-
             //send the string to relay or client 
             writer.println(base64Key);
-            writer.flush();
-
-    }
-
-    public static void sendPublicKeyUser(String user, PublicKey publicKey, PrintWriter writer)
-    {
-        //FIRST SEND: SENDING PUBLIC KEY OF CLIENT TO RELAY (have to convert to bytes and string to send 
-            // to not result in corruption)
-            //convert publickey into bytes
-            byte[] keyBytes = publicKey.getEncoded();
-
-            //encode the bytes into text safe string 
-            String base64Key = Base64.getEncoder().encodeToString(keyBytes);
-            String modify = user + "\\|" + base64Key;
-
-            //send the string to relay or client 
-            writer.println(modify);
             writer.flush();
 
     }
