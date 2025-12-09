@@ -2,6 +2,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.math.BigInteger;
 import java.net.Socket;
 import java.security.KeyPair;
 import java.security.PrivateKey;
@@ -12,17 +13,17 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class Client {
+public class c {
 
     //TreeMap<String> mutualAuthentication = new TreeMap<>();
     static String mutualAuthenticationRandomMSG = null;
     static String userName = null;
-    static int sequenceNumber = 1;
+    static int sequenceNumber =  (int) (Math.random() * 1000);
     static PublicKey publicKey;
     static PrivateKey privateKey;
 	static PublicKeys pubKeys = new PublicKeys();
     static Map<String, PublicKey> systemPublicKeys = new ConcurrentHashMap<>();
-    static Map<String, SecureRandom> sequenceNumbers = new ConcurrentHashMap<>();
+    static Map<String, Integer> sequenceNumbers = new ConcurrentHashMap<>();
     static volatile boolean receivedAuthenticatedClients = false;
     public static void main(String[] args) throws Exception
     {
@@ -242,33 +243,69 @@ public class Client {
                 System.out.print("Enter message: ");
                 String msg = scan.nextLine();
 
-                try {
-                    sendMsg(receiver, relaysPublicKey, msg, writer);
-                } catch (IllegalArgumentException e) {
+                try 
+                {
+                    if(!sequenceNumbers.containsKey(receiver))
+                    {
+                        sendMsg(receiver, relaysPublicKey, msg, writer, true);
+                    }
+                    else 
+                    {
+                        sendMsg(receiver, relaysPublicKey, msg, writer, false);
+                    }
+                } 
+                catch (IllegalArgumentException e) 
+                {
                     System.out.println("Send error: " + e.getMessage());
                 }
             }
         }
     
 
-    public static void sendMsg(String receiver, PublicKey relay, String msg, PrintWriter writer) throws Exception
+    public static void sendMsg(String receiver, PublicKey relay, String msg, PrintWriter writer, boolean diffie) throws Exception
     {
+        int seq;
+        String innerBase64;
+        SecureRandom rnd;
+        String msgFormat;
+
+        //creating SecureRandom (used for PKCS 1 padding randomness)
+        rnd = SecureRandom.getInstanceStrong();
+
         if(systemPublicKeys.containsKey(receiver) == false)
         {
             throw new IllegalArgumentException("Receiver with that username does not exist");
         }
-        String msgFormat = userName + "|" + receiver + "|" + sequenceNumber + "|" + msg;
-        byte[] toSend = Encrypt.stringToByte(msgFormat);
 
-        //creating SecureRandom (used for PKCS 1 padding randomness)
-        SecureRandom rnd = SecureRandom.getInstanceStrong();
+        if(diffie)
+        {
+
+            //random seq number and populate table
+            seq = sequenceNumber;
+            sequenceNumbers.put(receiver, ++sequenceNumber);
+            BigInteger a = DH.generatePrivate(rnd);
+            BigInteger A = DH.computePublic(a);
+            msgFormat =  userName + "|" + receiver + "|" + seq + "|" + msg;
+        }
+        else
+        {       
+            //get sequence number and update table 
+            seq = sequenceNumbers.get(receiver);
+            sequenceNumbers.remove(receiver, seq);
+            int nextSeq = seq+1;
+            sequenceNumbers.put(receiver, nextSeq);
+        
+            msgFormat = userName + "|" + receiver + "|" + seq + "|" + msg;
+            
+        }
+
+        byte[] toSend = Encrypt.stringToByte(msgFormat);
 
         //encrypt the message with public key of receiver
         byte[] innerEncryption = Encrypt.enctryptWithPublicKey(toSend, systemPublicKeys.get(receiver), rnd);
-		
+        
         //making it string to add receiver's name 
-        String innerBase64 = Base64.getEncoder().encodeToString(innerEncryption);
-        System.out.println(innerBase64);
+        innerBase64 = Base64.getEncoder().encodeToString(innerEncryption);
         
         //adding receiver's name 
         String innerEncryptionWithRcver = innerBase64 + "|" + receiver;
@@ -291,51 +328,29 @@ public class Client {
 
     public static void receiveMsg(String msg) throws Exception
     {
-        // byte[] m = Base64.getDecoder().decode(msg);
-        // byte[] rcvMsg = Decrypt.decryptedFromPublicKey(m, privateKey);
+        byte[] m = Base64.getDecoder().decode(msg);
+        byte[] rcvMsg = Decrypt.decryptedFromPublicKey(m, privateKey);
 
-        // if(rcvMsg == null)
-        // {
-        //     throw new IllegalArgumentException("Received Message is empty");
-        // }
-
-        // String decryptedMSG = Encrypt.byteToString(rcvMsg);
-
-        // //String rcvedmsg = Encrypt.byteToString(rcvMsg);
-        // String[] splitMessage = decryptedMSG.split("\\|");
-        System.out.println("DEBUG receiveMsg(): got line of length " + msg.length());
-
-        byte[] cipher;
-        try {
-            cipher = Base64.getDecoder().decode(msg);
-        } catch (IllegalArgumentException e) {
-            System.out.println("DEBUG: Not valid Base64 for ciphertext: " + msg);
-            return; // don't try to decrypt garbage
-        }
-
-        byte[] rcvMsg;
-        try {
-            rcvMsg = Decrypt.decryptedFromPublicKey(cipher, privateKey);
-        } catch (IllegalArgumentException e) {
-            // This is where your "Incorrect length" comes from
-            System.out.println("DEBUG: Decryption failed (probably wrong length): " + e.getMessage());
-            return;
-        }
-
-        if (rcvMsg == null || rcvMsg.length == 0)
+        if(rcvMsg == null)
         {
-            System.out.println("DEBUG: Received empty decrypted message");
-            return;
+            throw new IllegalArgumentException("Received Message is empty");
         }
 
         String decryptedMSG = Encrypt.byteToString(rcvMsg);
-        System.out.println("DEBUG: Decrypted plaintext: " + decryptedMSG);
 
-        String[] splitMessage = decryptedMSG.split("\\|", 4);
+        String[] splitMessage = decryptedMSG.split("\\|");   
+
+
         if (splitMessage.length < 4) {
             System.out.println("DEBUG: Bad plaintext format: " + decryptedMSG);
             return;
         }
+
+        // if(Integer.parseInt(splitMessage[splitMessage.length-2]) != sequenceNumbers.get(splitMessage[0]))
+        // {
+        //     //log it 
+            
+        // }
 
         System.out.println("Message sent from: " + splitMessage[0] +"\nMessage: " + splitMessage[splitMessage.length-1]);
         
