@@ -1,11 +1,19 @@
-import java.io.*;
-import java.net.*;
-import java.nio.charset.StandardCharsets;
-import java.security.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.util.Base64;
+import java.util.Map;
+import java.util.Scanner;
+import java.util.concurrent.ConcurrentHashMap;
 
-public class Client 
-{
+public class Client {
+
     //TreeMap<String> mutualAuthentication = new TreeMap<>();
     static String mutualAuthenticationRandomMSG = null;
     static String userName = null;
@@ -13,7 +21,9 @@ public class Client
     static PublicKey publicKey;
     static PrivateKey privateKey;
 	static PublicKeys pubKeys = new PublicKeys();
-
+    static Map<String, PublicKey> systemPublicKeys = new ConcurrentHashMap<>();
+    static Map<String, SecureRandom> sequenceNumbers = new ConcurrentHashMap<>();
+    static volatile boolean receivedAuthenticatedClients = false;
     public static void main(String[] args) throws Exception
     {
         //getting username from user (pseudonym)
@@ -21,23 +31,8 @@ public class Client
         System.out.print("Enter Username: ");
         userName = scan.nextLine();
 
-        //no username repetitions 
-        while(PublicKeys.containsKey(userName))
-        {
-            System.out.print("Username Taken, enter a new one: ");
-            userName = scan.nextLine();
-        }
-
-
         //generated rsa key 
         KeyPair clientRSAkey = RSAKeys.rsaKeysGenerator(1024);
-        //NEED TO MAKE RELAY'S RSA KEY 2048
-        
-
-        //THIS IS WHAT THE SERVER DOES AFTER A SUCCESSFUL MUTUAL AUTHENTICATION 
-        // //storing public key in a public class for all to use 
-        // PublicKeys p = new PublicKeys();
-        // p.addPublicKey(userName, rsakey.getPublic());
 
         //getting public and private keys 
         publicKey = clientRSAkey.getPublic();
@@ -83,34 +78,50 @@ public class Client
             
             }
 
-            while(receivedMSG != null)
+            //threads for receiving and sending 
+            Thread receiver = new Thread(() -> 
             {
-                if(receivedMSG.equals("A new user has been added, here is their public key")){
-                    ReceivePublicKey.receivePublicKey(reader);
-                    continue;
+                try 
+                {
+                    listenLoop(reader);
+                } 
+                catch (Exception e) 
+                {
+                    System.out.println("Receiver error: " + e.getMessage());
+                    e.printStackTrace();
                 }
-                System.out.print("Recepient of msg: ");
-                String receiver = scan.nextLine();
-                System.out.print("Enter message: ");
-                String msg = scan.nextLine();
-                sendMsg(receiver, relaysPublicKey, msg, writer);
-                receivedMSG = reader.readLine();
-                receiveMsg(receivedMSG);
+            });
 
-            }
-			
-			reader.close();
-		}
-		catch(IOException ex)
-		{
-			ex.printStackTrace();
-		}
+            Thread sender = new Thread(() -> 
+            {
+                try 
+                {
+                    sendLoop(scan, writer, relaysPublicKey);
+                } 
+                catch (Exception e) 
+                {
+                    System.out.println("Sender thread error: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            });
 
+            receiver.start();
+            sender.start();
+
+            //waiting for both threads to finish 
+            receiver.join();
+            sender.join();
+
+            //closing buffers 
+            reader.close();
+            writer.close();
+            clientSocket.close();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
     }
 
-    
-
-    public static byte[] mutualAuthentication(KeyPair k, PublicKey relay, int sendNum, String receivedMSG) throws Exception
+     public static byte[] mutualAuthentication(KeyPair k, PublicKey relay, int sendNum, String receivedMSG) throws Exception
     {
         
         byte [] cipherText = null;
@@ -119,7 +130,6 @@ public class Client
         //FIRST MSG: Send (msg with E_privateKey)E_relayPublicKey
         if(sendNum == 1)
         {
-            System.out.println("!11111");
             int randomNum = (int) (Math.random() * 1000);
 
             //creating SecureRandom (used for PKCS 1 padding randomness)
@@ -128,11 +138,10 @@ public class Client
             String randomeMsg = "rndm" + "" + randomNum;
             mutualAuthenticationRandomMSG = randomeMsg;
             byte[] m = Encrypt.stringToByte(randomeMsg);
+            
             //encrypt with private key of client 
             byte[] encrypt = Encrypt.enctryptWithPrivateKey(m, k.getPrivate());
-			// ✅ Real local verification:
-byte[] recovered = Decrypt.decryptedFromPrivateKey(encrypt, k.getPublic());
-System.out.println("Local verify OK? " + Encrypt.byteToString(recovered));
+			
             //encrypt with public key of relay 
             cipherText = Encrypt.enctryptWithPublicKey(encrypt, relay,  rnd);
 
@@ -142,29 +151,17 @@ System.out.println("Local verify OK? " + Encrypt.byteToString(recovered));
             //decrypt the public key encryption using private key 
             byte[] rcvedMSG = Base64.getDecoder().decode(receivedMSG);
             byte[] decryptedMSG= Decrypt.decryptedFromPublicKey(rcvedMSG, k.getPrivate());
-            System.out.println(Encrypt.byteToString(decryptedMSG));
+            
+            //convert to string for splitting 
             String fullmsg = Encrypt.byteToString(decryptedMSG);
-            System.out.println(fullmsg);
             String[] rcved = fullmsg.split("\\|");
-            //get a treemap with exntrypeted data and string separated by the delimeter
-            //TreeMap<byte[], String> delimiterSeparated = split(decryptedMSG);
-            //separate them out 
-            //byte[] dec1 = delimiterSeparated.firstKey();
-            //String msg = delimiterSeparated.get(dec1);
-            //check if received challage msg is correct 
-            System.out.println("recved: " + rcved[1]);
-            System.out.println("sent: "+ mutualAuthenticationRandomMSG);
+           
+           //check matching challenge 
             if(rcved[1].compareTo(mutualAuthenticationRandomMSG) != 0)
             {
                 throw new IllegalArgumentException("Sent challenge message and received messages do not Match");
             }
 
-            //decrypt second part of received msg 
-            //byte[] fulldecryption = Decrypt.decryptedFromPrivateKey(dec1, relay);
-            
-            //encrypt decrypted relay challege with username of client -> | delimeter  
-            //String challenge = Encrypt.byteToString(fulldecryption);
-            //String toSend = "RickRolled" + "|" + userName;
             String thrirdMsg = rcved[0] + "|" + userName;
             byte[] toEncrypt = Encrypt.stringToByte(thrirdMsg);
             
@@ -177,60 +174,89 @@ System.out.println("Local verify OK? " + Encrypt.byteToString(recovered));
         return cipherText;
     }
 
-    public static TreeMap<byte[], String> split(byte[] decryptedBytes) 
-    {
-        TreeMap<byte[],String> delimiterSeparated = new TreeMap<>();
-        
-        //finding delimiter index
-        int delim = -1;
-        for (int i = 0; i < decryptedBytes.length; i++) 
-        {
-            if (decryptedBytes[i] == (byte) '|') 
-            { 
-                delim = i;
-                break;
+    private static void listenLoop(BufferedReader reader) throws Exception {
+        String receivedMSG;
+         
+
+            //communication between clients
+            while((receivedMSG = reader.readLine()) != null)
+            {
+                //first client to enter chat system
+                if(receivedMSG.startsWith("You are the only user"))
+                {
+                    continue;
+                }
+                //a new client connected to chat system
+                else if(receivedMSG.startsWith("A new user"))
+                {
+                    //get name from the relay message
+                    System.out.println(receivedMSG);
+                    String broacaseMSG = receivedMSG;
+                    String[] nameSplit =broacaseMSG.split("\\: ");
+
+                    //add new client name and public key to inner list 
+                    System.out.println(nameSplit[1]);
+                    PublicKey newUser = ReceivePublicKey.receivePublicKey(reader);
+                    systemPublicKeys.put(nameSplit[1], newUser);
+                    receivedAuthenticatedClients = true;
+                }
+                //this client is the new client into the system with other clients 
+                else if(receivedMSG.startsWith("Here are all"))
+                {
+                    //while we don't get notice from the relay that all clients on list have been given
+                    while(!(receivedMSG = reader.readLine()).startsWith("All current"))
+                    {
+                        //get client name
+                        System.out.println(receivedMSG);
+                        String clientlist = receivedMSG;
+                        String[] nameSplit =clientlist.split("\\: ");
+
+                        //add client to inner client list
+                        System.out.println(nameSplit[1]);
+                        PublicKey newUser = ReceivePublicKey.receivePublicKey(reader);
+                        systemPublicKeys.put(nameSplit[1], newUser);
+                    }
+                    receivedAuthenticatedClients = true;
+                }
+                else if (receivedMSG.startsWith("Error:") || receivedMSG.startsWith("Your have been succefully")) 
+                {
+                    System.out.println(receivedMSG);
+                }
+                else if(receivedMSG.startsWith("Incoming MSG"))
+                {
+                    //if the message is no other system message, it is a client-to-client message
+                    receiveMsg(receivedMSG = reader.readLine());
+                }
             }
         }
-        if (delim == -1)
-        {
-            throw new IllegalArgumentException("Delimiter '|' not found");
+        private static void sendLoop(Scanner scan, PrintWriter writer, PublicKey relaysPublicKey) throws Exception {
+            while (true) {
+                // Wait until we know of at least one other user
+                if (!receivedAuthenticatedClients || systemPublicKeys.isEmpty()) {
+                    Thread.sleep(500);
+                    continue;
+                }
+
+                System.out.print("Recipient of msg: ");
+                String receiver = scan.nextLine().trim();
+                System.out.print("Enter message: ");
+                String msg = scan.nextLine();
+
+                try {
+                    sendMsg(receiver, relaysPublicKey, msg, writer);
+                } catch (IllegalArgumentException e) {
+                    System.out.println("Send error: " + e.getMessage());
+                }
+            }
         }
-
-        //left = encrypted msg (expected Base64 text)
-        byte[] left = Arrays.copyOfRange(decryptedBytes, 0, delim);
-        System.out.println(Encrypt.byteToString(left));
-        
-        //right = string msg (expected UTF-8 string)
-        byte[] right = Arrays.copyOfRange(decryptedBytes, delim + 1, decryptedBytes.length);
-        System.out.println(Encrypt.byteToString(right));
-        //triming possible whitespace/newlines around base64 and string
-        String encmsg = new String(left, StandardCharsets.US_ASCII).trim(); 
-        String str = new String(right, StandardCharsets.UTF_8).trim();
-        System.out.println(encmsg + "\t\t" + str);
-        //decode left part from Base64 -> encrypted bytes
-        byte[] encryptedBytes;
-        try 
-        {
-            encryptedBytes = Base64.getDecoder().decode(encmsg);
-        } 
-        catch (IllegalArgumentException e) 
-        {
-            throw new IllegalArgumentException("Left side is not an Encrypted Base64 format: ", e);
-        }
-
-        //put into map
-        delimiterSeparated.put(encryptedBytes, str);
-
-        //return map
-        return delimiterSeparated;
-    }
+    
 
     public static void sendMsg(String receiver, PublicKey relay, String msg, PrintWriter writer) throws Exception
     {
-        // if(pubKeys.containsKey(receiver) == false)
-        // {
-        //     throw new IllegalArgumentException("Receiver with that username does not exist");
-        // }
+        if(systemPublicKeys.containsKey(receiver) == false)
+        {
+            throw new IllegalArgumentException("Receiver with that username does not exist");
+        }
         String msgFormat = userName + "|" + receiver + "|" + sequenceNumber + "|" + msg;
         byte[] toSend = Encrypt.stringToByte(msgFormat);
 
@@ -238,17 +264,26 @@ System.out.println("Local verify OK? " + Encrypt.byteToString(recovered));
         SecureRandom rnd = SecureRandom.getInstanceStrong();
 
         //encrypt the message with public key of receiver
-        byte[] innerEncryption = Encrypt.enctryptWithPublicKey(toSend, PublicKeys.getPublicKey(receiver), rnd);
+        byte[] innerEncryption = Encrypt.enctryptWithPublicKey(toSend, systemPublicKeys.get(receiver), rnd);
 		
+        //making it string to add receiver's name 
+        String innerBase64 = Base64.getEncoder().encodeToString(innerEncryption);
+        System.out.println(innerBase64);
+        
+        //adding receiver's name 
+        String innerEncryptionWithRcver = innerBase64 + "|" + receiver;
+
+        //converting it back into bytes
+        byte[]  innerEncryptionWithRcverByte = Encrypt.stringToByte(innerEncryptionWithRcver);
 		
 
         //do an outer encryption of encrypted message with public key of the relay
         rnd = SecureRandom.getInstanceStrong();
-        byte[] cipherTextBytes = Encrypt.enctryptWithPublicKey(innerEncryption, relay, rnd);
+        byte[] cipherTextBytes = Encrypt.enctryptWithPublicKey(innerEncryptionWithRcverByte, relay, rnd);
 
         //encode it for safer transport and send it relay
-        String c= Base64.getEncoder().encodeToString(toSend);
-		String cipherText = c + "|"+ receiver; 
+        String cipherText= Base64.getEncoder().encodeToString(cipherTextBytes);
+		//String cipherText = c + "|"+ receiver; 
         writer.println(cipherText);
         writer.flush();
 
@@ -256,31 +291,54 @@ System.out.println("Local verify OK? " + Encrypt.byteToString(recovered));
 
     public static void receiveMsg(String msg) throws Exception
     {
-        byte[] m = Encrypt.stringToByte(msg);
-        byte[] rcvMsg = Decrypt.decryptedFromPublicKey(m, privateKey);
+        // byte[] m = Base64.getDecoder().decode(msg);
+        // byte[] rcvMsg = Decrypt.decryptedFromPublicKey(m, privateKey);
 
-        if(rcvMsg == null)
-        {
-            throw new IllegalArgumentException("Received Message is empty");
+        // if(rcvMsg == null)
+        // {
+        //     throw new IllegalArgumentException("Received Message is empty");
+        // }
+
+        // String decryptedMSG = Encrypt.byteToString(rcvMsg);
+
+        // //String rcvedmsg = Encrypt.byteToString(rcvMsg);
+        // String[] splitMessage = decryptedMSG.split("\\|");
+        System.out.println("DEBUG receiveMsg(): got line of length " + msg.length());
+
+        byte[] cipher;
+        try {
+            cipher = Base64.getDecoder().decode(msg);
+        } catch (IllegalArgumentException e) {
+            System.out.println("DEBUG: Not valid Base64 for ciphertext: " + msg);
+            return; // don't try to decrypt garbage
         }
 
-        //String rcvedmsg = Encrypt.byteToString(rcvMsg);
-        String[] splitMessage = msg.split("\\|");
+        byte[] rcvMsg;
+        try {
+            rcvMsg = Decrypt.decryptedFromPublicKey(cipher, privateKey);
+        } catch (IllegalArgumentException e) {
+            // This is where your "Incorrect length" comes from
+            System.out.println("DEBUG: Decryption failed (probably wrong length): " + e.getMessage());
+            return;
+        }
 
-        System.out.println("Message sent from: \nSender: " + splitMessage[0] +"\nMessage: " + splitMessage[splitMessage.length-1]);
+        if (rcvMsg == null || rcvMsg.length == 0)
+        {
+            System.out.println("DEBUG: Received empty decrypted message");
+            return;
+        }
+
+        String decryptedMSG = Encrypt.byteToString(rcvMsg);
+        System.out.println("DEBUG: Decrypted plaintext: " + decryptedMSG);
+
+        String[] splitMessage = decryptedMSG.split("\\|", 4);
+        if (splitMessage.length < 4) {
+            System.out.println("DEBUG: Bad plaintext format: " + decryptedMSG);
+            return;
+        }
+
+        System.out.println("Message sent from: " + splitMessage[0] +"\nMessage: " + splitMessage[splitMessage.length-1]);
         
     }
-    
+
 }
-
-
-
-
-
-
-
-
-
-
-
-
