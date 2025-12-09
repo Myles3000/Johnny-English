@@ -42,7 +42,7 @@ public class Encrypt{
         byte[] encyBlock = new byte[K];
         int i = 0;
         encyBlock[i++] = 0x00;                        // leading 0
-        encyBlock[i++] = 0x02;                        
+        encyBlock[i++] = 0x01;                        
      
         Arrays.fill(encyBlock, i, i + ps, (byte) 0xFF);  // PS = all 0xFF
         i += ps;
@@ -71,7 +71,7 @@ public class Encrypt{
         byte[] encyBlock = new byte[K];
         int i = 0;
         encyBlock[i++] = 0x00;                        // leading 0
-        encyBlock[i++] = 0x02;                        
+        encyBlock[i++] = 0x01;                        
         
         //fill ps with random bytes
         for (int j = 0; j < ps; j++) 
