@@ -85,6 +85,10 @@ public class Client
 
             while(receivedMSG != null)
             {
+                if(receivedMSG.equals("A new user has been added, here is their public key")){
+                    ReceivePublicKey.receivePublicKey(reader);
+                    continue;
+                }
                 System.out.print("Recepient of msg: ");
                 String receiver = scan.nextLine();
                 System.out.print("Enter message: ");
