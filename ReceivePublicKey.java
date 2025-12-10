@@ -12,13 +12,15 @@ public class ReceivePublicKey {
         //read from the buffer 
         String base64Key = reader.readLine();
 
-        //convert string into bytes 
-        byte[] keyBytes = Base64.getDecoder().decode(base64Key);
-
         if (base64Key == null) 
         {
             throw new IllegalStateException("Null Public Key Received");
         }
+
+        //convert string into bytes 
+        byte[] keyBytes = Base64.getDecoder().decode(base64Key);
+
+
         //reconstruct the public key from the bytes 
         X509EncodedKeySpec keySpec = new X509EncodedKeySpec(keyBytes);
         KeyFactory key = KeyFactory.getInstance("RSA"); 
