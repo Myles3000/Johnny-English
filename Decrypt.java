@@ -76,7 +76,7 @@ public class Decrypt {
         int i = 0;
 
         //checking block structure contains : 0x00 | 0x02 | PS | 0x00 | M
-        if (decryptBlock[i++] != 0x00 || decryptBlock[i++] != 0x02)
+        if (decryptBlock[i++] != 0x00 || decryptBlock[i++] != 0x01)
         {
             throw new IllegalArgumentException("Block structure not correct ");
         }
