@@ -27,7 +27,14 @@ public class Client {
 	static PublicKeys pubKeys = new PublicKeys();
     static Map<String, PublicKey> systemPublicKeys = new ConcurrentHashMap<>();
     static Map<String, Integer> sequenceNumbers = new ConcurrentHashMap<>();
+    static Map<String, Integer> sendSeq = new ConcurrentHashMap<>();
+    static Map<String, Integer> recvSeq = new ConcurrentHashMap<>();
+    static Map<String, BigInteger> dhkey = new ConcurrentHashMap<>(); 
+    static Map<String, byte[]> sessionKeys = new ConcurrentHashMap<>();
+    static Map<String, String> firstSend = new ConcurrentHashMap<>();
     static volatile boolean receivedAuthenticatedClients = false;
+    static File logger = new File("Logger.txt");
+    static BufferedWriter log;
     public static void main(String[] args) throws Exception
     {
         //getting username from user (pseudonym)
@@ -50,16 +57,15 @@ public class Client {
 		{
 			//Create a client socket and connect to server at 127.0.0.1 port 5000
 			Socket clientSocket = new Socket("localhost",5000);
-            System.out.println("connected");
 			
 			BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             PrintWriter writer = new PrintWriter(clientSocket.getOutputStream(), true);
-
-            System.out.println("sending pk");
+            log = new BufferedWriter(new FileWriter(logger));
+    
             //FIRST SEND: sending public key to relay 
             SendPublicKey.sendPublicKey(publicKey, writer);
             relaysPublicKey = ReceivePublicKey.receivePublicKey(reader);
-            System.out.println("pk sent");            
+                  
 
             /* while the relay has not placed the username and public key into the publickeys map, we are in 
              *    MUTUAL AUTHENTICATION MODE!!
@@ -68,7 +74,7 @@ public class Client {
             while(p.containsKey(userName) == false && sendCount < 2)
             {
                 sendCount++;
-                System.out.println("Here, send count = " + sendCount);
+                
                 //get ecrypted message for mutual authentication msg
                 message = mutualAuthentication(clientRSAkey, relaysPublicKey, sendCount, receivedMSG);
 
@@ -82,12 +88,13 @@ public class Client {
             
             }
 
+
             //threads for receiving and sending 
             Thread receiver = new Thread(() -> 
             {
                 try 
                 {
-                    listenLoop(reader);
+                    listenLoop(reader, writer, relaysPublicKey);
                 } 
                 catch (Exception e) 
                 {
@@ -129,7 +136,6 @@ public class Client {
     {
         
         byte [] cipherText = null;
-        System.out.println("IN MUTUAL AUTH");
 
         //FIRST MSG: Send (msg with E_privateKey)E_relayPublicKey
         if(sendNum == 1)
@@ -178,29 +184,28 @@ public class Client {
         return cipherText;
     }
 
-    private static void listenLoop(BufferedReader reader) throws Exception {
+    private static void listenLoop(BufferedReader reader, PrintWriter writer, PublicKey relaysPublicKey) throws Exception {
+        
+        
         String receivedMSG;
-        File logger = new File("Logger.txt");
-        BufferedWriter log = new BufferedWriter(new FileWriter(logger)); 
-
+         
             //communication between clients
             while((receivedMSG = reader.readLine()) != null)
             {
                 //first client to enter chat system
                 if(receivedMSG.startsWith("You are the only user"))
                 {
+                    System.out.println(receivedMSG);
                     continue;
                 }
                 //a new client connected to chat system
                 else if(receivedMSG.startsWith("A new user"))
                 {
                     //get name from the relay message
-                    System.out.println(receivedMSG);
                     String broacaseMSG = receivedMSG;
                     String[] nameSplit =broacaseMSG.split("\\: ");
 
                     //add new client name and public key to inner list 
-                    System.out.println(nameSplit[1]);
                     PublicKey newUser = ReceivePublicKey.receivePublicKey(reader);
                     systemPublicKeys.put(nameSplit[1], newUser);
                     receivedAuthenticatedClients = true;
@@ -212,12 +217,10 @@ public class Client {
                     while(!(receivedMSG = reader.readLine()).startsWith("All current"))
                     {
                         //get client name
-                        System.out.println(receivedMSG);
                         String clientlist = receivedMSG;
                         String[] nameSplit =clientlist.split("\\: ");
 
                         //add client to inner client list
-                        System.out.println(nameSplit[1]);
                         PublicKey newUser = ReceivePublicKey.receivePublicKey(reader);
                         systemPublicKeys.put(nameSplit[1], newUser);
                     }
@@ -225,12 +228,13 @@ public class Client {
                 }
                 else if (receivedMSG.startsWith("Error:") || receivedMSG.startsWith("Your have been succefully")) 
                 {
-                    System.out.println(receivedMSG);
+                    log.write(receivedMSG);
+                    log.flush();
                 }
                 else if(receivedMSG.startsWith("Incoming MSG"))
                 {
                     //if the message is no other system message, it is a client-to-client message
-                    receiveMsg(receivedMSG = reader.readLine());
+                    receiveMsg(receivedMSG = reader.readLine(), writer, relaysPublicKey);
                 }
             }
         }
@@ -249,9 +253,10 @@ public class Client {
 
                 try 
                 {
-                    if(!sequenceNumbers.containsKey(receiver))
+                    if(!sessionKeys.containsKey(receiver))
                     {
                         sendMsg(receiver, relaysPublicKey, msg, writer, true);
+                        firstSend.put(receiver, msg);
                     }
                     else 
                     {
@@ -272,8 +277,7 @@ public class Client {
         String innerBase64;
         SecureRandom rnd;
         String msgFormat;
-        File logger = new File("Logger.txt");
-        BufferedWriter log = new BufferedWriter(new FileWriter(logger));
+
 
         //creating SecureRandom (used for PKCS 1 padding randomness)
         rnd = SecureRandom.getInstanceStrong();
@@ -285,24 +289,56 @@ public class Client {
 
         if(diffie)
         {
+            if(!sessionKeys.containsKey(receiver))
+            {
+                //register sequence number 
+                sequenceNumbers.put(receiver, ++sequenceNumber);
 
-            //random seq number and populate table
-            seq = sequenceNumber;
-            sequenceNumbers.put(receiver, ++sequenceNumber);
-            //BigInteger a = DH.generatePrivate(rnd);
-            //BigInteger A = DH.computePublic(a);
-            msgFormat =  userName + "|" + receiver + "|" + seq + "|" + msg;
+                //get dh values
+                BigInteger a = DH.generatePrivate(rnd);
+                dhkey.put(receiver, a);
+                BigInteger A = DH.computePublic(a);
+
+                byte[] A_bytes = A.toByteArray();                     
+                String A_b64 = Base64.getEncoder().encodeToString(A_bytes);
+                //create dh msg
+                msgFormat =  userName + "|" + receiver + "|" + "DH" + "|" + A_b64;            
+            }
+            else
+            {
+                
+                //already crafted
+                msgFormat = msg;
+            }
         }
         else
-        {       
-            //get sequence number and update table 
-            seq = sequenceNumbers.get(receiver);
-            sequenceNumbers.remove(receiver, seq);
-            int nextSeq = seq+1;
+        {   
+            //updating sequence numbers 
+            Integer currentSeq = sendSeq.get(receiver);
+            int nextSeq;
+            if(currentSeq == null)
+            {
+                nextSeq = 1;
+            }
+            else 
+            {
+                nextSeq = ++currentSeq;
+            }
+           
+            sendSeq.put(receiver, nextSeq);
             sequenceNumbers.put(receiver, nextSeq);
         
-            msgFormat = userName + "|" + receiver + "|" + seq + "|" + msg;
+            byte[] sessionKey = sessionKeys.get(receiver);
+            msgFormat = userName + "|" + receiver + "|" + nextSeq + "|" + msg;
             
+            byte[] notEncrypted = Encrypt.stringToByte(msgFormat);
+
+            byte[] dhEcrypt = DHEncryptDecrypt.xorEncrypt(notEncrypted, sessionKey);
+            String dhEcryptBase64 = Base64.getEncoder().encodeToString(dhEcrypt);
+
+            //new format with encrypted message
+            msgFormat = userName + "|" + receiver + "|" + "MSG" + "|" + dhEcryptBase64;
+
         }
 
         byte[] toSend = Encrypt.stringToByte(msgFormat);
@@ -324,24 +360,24 @@ public class Client {
         rnd = SecureRandom.getInstanceStrong();
         byte[] cipherTextBytes = Encrypt.enctryptWithPublicKey(innerEncryptionWithRcverByte, relay, rnd);
 
-        //update Logger
-        log.write("CLIENT SENT:\n USERNAME: " + userName + "\n RECEIVER: " + receiver + "\n MSG: " + msg + 
-        "\n INNER ENCRYPT: " +  innerEncryptionWithRcver + "\n DOUBLE ENCRYPT: " + cipherTextBytes);
-
         //encode it for safer transport and send it relay
         String cipherText= Base64.getEncoder().encodeToString(cipherTextBytes);
+
+        //update Logger
+        log.write("CLIENT SENT:\n USERNAME: " + userName + "\n RECEIVER: " + receiver + "\n MSG: " + msg + 
+        "\n INNER ENCRYPT: " +  innerEncryptionWithRcver + "\n DOUBLE ENCRYPT: " + cipherText);
+        log.flush();
 		//String cipherText = c + "|"+ receiver; 
         writer.println(cipherText);
         writer.flush();
 
     }
 
-    public static void receiveMsg(String msg) throws Exception
+    public static void receiveMsg(String msg, PrintWriter writer, PublicKey relaysPublicKey) throws Exception
     {
         byte[] m = Base64.getDecoder().decode(msg);
         byte[] rcvMsg = Decrypt.decryptedFromPublicKey(m, privateKey);
-        File logger = new File("Logger.txt");
-        BufferedWriter log = new BufferedWriter(new FileWriter(logger));
+        String message = null;
 
         if(rcvMsg == null)
         {
@@ -350,24 +386,80 @@ public class Client {
 
         String decryptedMSG = Encrypt.byteToString(rcvMsg);
 
-        String[] splitMessage = decryptedMSG.split("\\|");   
+        String[] splitMessage = decryptedMSG.split("\\|");
+        
+        if(splitMessage[2].compareTo("DH") == 0)
+        {
+            byte[] Abytes = Base64.getDecoder().decode(splitMessage[3]);
+            BigInteger A = new BigInteger(1, Abytes);
+            SecureRandom rnd = new SecureRandom();
 
+            //receiver calculated own dh
+            BigInteger b = DH.generatePrivate(rnd);
+            BigInteger B = DH.computePublic(b);
 
-        if (splitMessage.length < 4) {
-            System.out.println("DEBUG: Bad plaintext format: " + decryptedMSG);
-            return;
+            //A^b mod p
+            BigInteger shared = DH.computeShared(b, A);
+            byte[] key = DH.deriveKey(shared);
+
+            //populate map
+            sessionKeys.put(splitMessage[0], key);
+            dhkey.remove(splitMessage[0]);
+
+            byte[] B_bytes = B.toByteArray();
+            String B_b64 = Base64.getEncoder().encodeToString(B_bytes);
+            //reply
+            String dhReply = userName + "|" + splitMessage[0] + "|" + "DHREPLY" + "|" + B_b64;
+            sendMsg(splitMessage[0], relaysPublicKey, dhReply, writer, true);
         }
+        else if(splitMessage[2].compareTo("DHREPLY") == 0)
+        {
+            //get B and a
+            byte[] Bbytes = Base64.getDecoder().decode(splitMessage[3]);
+            BigInteger B = new BigInteger(1, Bbytes);
+            BigInteger a = dhkey.get(splitMessage[0]);
 
-        log.write("CLIENT RECEIVED \n SENDER: " + splitMessage[0] + "\n MESSAGE: " + m 
-        + "\n FULLY DECRYPTED MSG: " + splitMessage[splitMessage.length-1]);
-
-        // if(Integer.parseInt(splitMessage[splitMessage.length-2]) != sequenceNumbers.get(splitMessage[0]))
-        // {
-        //     //log it 
+            //computer the shared key 
+            BigInteger shareKey = DH.computeShared(a, B);
+            byte[] key = DH.deriveKey(shareKey);
             
-        // }
+            //populate map
+            sessionKeys.put(splitMessage[0], key);
+            dhkey.remove(splitMessage[0]);
 
-        System.out.println("Message sent from: " + splitMessage[0] +"\nMessage: " + splitMessage[splitMessage.length-1]);
+            //sequenceNumbers.put(splitMessage[0], sequenceNumber);
+            //now df is done, send original msg
+            sendMsg(splitMessage[0], relaysPublicKey, firstSend.remove(splitMessage[0]), writer, false);
+            
+        }
+        else
+        {
+            byte[] secretKey = sessionKeys.get(splitMessage[0]);
+            byte[] decryptReady = Base64.getDecoder().decode(splitMessage[splitMessage.length-1]);
+            byte[] decrypted = DHEncryptDecrypt.xorDecrypt(decryptReady, secretKey);
+            message = Encrypt.byteToString(decrypted);
+            String[] split = message.split("\\|");
+
+            //checking for replay attacks using sequence number 
+            if(recvSeq.get(split[0]) != null)
+            {
+                if( Integer.parseInt(split[2]) != recvSeq.get(split[0])+1)
+                {
+                    System.out.println("DUPLICATED MESSAGE FOUND: DROPPING");
+                    return;
+                }
+            }
+            else
+            {
+                sequenceNumbers.put(split[0], Integer.valueOf(split[2]));
+                recvSeq.put(split[0], Integer.valueOf(split[2]));
+            }
+    
+            System.out.println("\nMessage sent from: " + splitMessage[0] +"\nMessage: " + split[split.length-1]);
+            log.write("CLIENT RECEIVED \n SENDER: " + splitMessage[0] + "\n MESSAGE: " + m + "\n FULLY DECRYPTED MSG: " + message);
+            log.flush();
+        
+        }
         
     }
 
