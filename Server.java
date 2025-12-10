@@ -13,7 +13,7 @@ public class Server{
 	public void go(KeyPair keys) {
 		
 		try{
-			//Create a server socket at port 7777
+			//Create a server socket at port 5000
 			ServerSocket serverSock = new ServerSocket(5000);
 			//Server goes into a permanent loop accepting connections from clients			
 			while(true)
@@ -89,7 +89,6 @@ public class Server{
 			String delimit = "|";
 			String receiver = null;
 			try {
-				File logger = new File("Logger.txt");
 				String challenge = gauntlet();
 				byte[] rubix = encode.stringToByte(challenge);
 				SecureRandom rnd = SecureRandom.getInstanceStrong();
@@ -97,8 +96,8 @@ public class Server{
 				PrintWriter out = new PrintWriter(sock.getOutputStream(), true);
 				PublicKey clientKey = pubKey.receivePublicKey(in);
 				SendPublicKey.sendPublicKey(keys.getPublic(), out);
+				File logger = new File("Logger.txt");
 				BufferedWriter log = new BufferedWriter(new FileWriter(logger));
-
 
 				if(!authClients.containsValue(clientKey)){
 					// FIRST MSG: Decrypted with private key of relay, decrypted with public key of client
@@ -109,17 +108,14 @@ public class Server{
 					}
 					byte[] firstMsg = Base64.getDecoder().decode(line);
 					log.write("RELAY RECEIVED: " + line);
+					log.flush();
 
 					//byte[] firstMsg = Base64.getDecoder().decode(in.readLine());
 					byte[] partialDecode = decode.decryptedFromPublicKey(firstMsg, keys.getPrivate());
 					byte[] fullyDecode = decode.decryptedFromPrivateKey(partialDecode, clientKey);
-                    System.out.println(Encrypt.byteToString(fullyDecode));
-					// SECOND MSG: Encrypted with relay private key the encrypted with clients public key
-					
-                    //byte[] partialEncode = encode.enctryptWithPrivateKey(rubix, keys.getPrivate());
-					//String temp =  Base64.getEncoder().encodeToString(partialEncode);
+
                     String msg = Encrypt.byteToString(rubix) + delimit + Encrypt.byteToString(fullyDecode);
-                    System.out.println(msg);
+
 					byte[] secondMsg = encode.enctryptWithPublicKey(encode.stringToByte(msg), clientKey, rnd);
 					String cipherText = Base64.getEncoder().encodeToString(secondMsg);
 
@@ -131,12 +127,8 @@ public class Server{
 					byte[] thirdMsg = Base64.getDecoder().decode(l);
 					byte[] clientResponse = decode.decryptedFromPublicKey(thirdMsg, keys.getPrivate());
 					String s = Encrypt.byteToString(clientResponse);
-					System.out.println(s);
+
 					String[] response = s.split("\\|");
-					
-					System.out.println("Response 0: " + response[0]);
-					System.out.println("Response 1: " + response[1]);
-					System.out.println("Server wanted: " + challenge);
 
 					if(response[0].equals(challenge)){
 						System.out.println("client authentication has been successful!");
@@ -157,7 +149,6 @@ public class Server{
 							newUser(response[1], clientKey, out);
 							authClients.put(response[1], clientKey);
 							usersPub.addPublicKey(response[1], clientKey);
-							System.out.println(usersPub.containsKey(response[1]));
 							
 						}
 						else
@@ -191,12 +182,12 @@ public class Server{
 					receiver = line[1];
 					
 					byte[] msg = Base64.getDecoder().decode(line[0]);
-
-					System.out.println(line[0]);
 					
 					Socket receiverSocket = currentClients.get(receiver);
 					log.write("SERVER RECEIVED:\n FULLY ENCRYPTED MSG: " + firstMsg + "\n RECEIVER: " + receiver + 
 					"\n INNER ENCRYPTION: " + partialDecode);
+					log.flush();
+
 
 					if(receiver != null && !receiverSocket.isClosed()){
 						PrintWriter send = new PrintWriter(receiverSocket.getOutputStream(), true);
