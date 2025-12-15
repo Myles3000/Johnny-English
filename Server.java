@@ -119,6 +119,9 @@ public class Server{
 					byte[] secondMsg = encode.enctryptWithPublicKey(encode.stringToByte(msg), clientKey, rnd);
 					String cipherText = Base64.getEncoder().encodeToString(secondMsg);
 
+					//Attacker captures second message
+					log.write("Oh No, an Attacker gained access to the second authenticating msg.");
+					ReplayAttackStorage.store(secondMsg);
 					out.println(cipherText);
 
 					String l = in.readLine();
@@ -192,6 +195,9 @@ public class Server{
 					if(receiver != null && !receiverSocket.isClosed()){
 						PrintWriter send = new PrintWriter(receiverSocket.getOutputStream(), true);
 						//msg = receiver + "|" + msg;
+						//ATTACKER captures msg
+						log.write("Oh No, an Attacker gained access to the msg being sent to the other client!");
+						ReplayAttackStorage.store(msg);
 						send.println("Incoming MSG");
 						send.println(line[0]);
 					} else {
